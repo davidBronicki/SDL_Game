@@ -175,10 +175,10 @@ GamePosition Camera::mouseLocation() const
 
 Player::Player()
 {
-	Keyboard::subscribeToKeyPressed(
-		function<void(Key)>([this](Key key) -> void
+	Mouse::subscribeToButtonPressed(
+		function<void(Button)>([this](Button button) -> void
 		{
-			if (key == Key::Space)
+			if (button == Button::Left)
 			{
 				try
 				{
@@ -352,6 +352,30 @@ Game::Game()
 			1.0)), 0);//damage modifier and weapon slot
 	player->newShip(playerShip);
 
+	shared_ptr<Ship> aiShip(make_shared<Ship>(
+		GamePosition(20,20)));
+	aiShip->setChassis(make_shared<ShipChassis>(
+		ImageTexture("Textures/small_mand.bmp"),
+		100,//hp
+		PhysicsObject(Kinematic(GamePosition(0, 0)), 1, 1, 1),
+		vector<size_t>{
+			1,//hull count
+			1,//engine count
+			1,//weapon count
+			1//shield count
+		}));
+	aiShip->setWeapon(make_shared<Weapon>(
+		ImageTexture("Textures/contour.png"),//weapon texture
+		100,//hp
+		PhysicsObject(Kinematic(GamePosition(0,0)), 1, 1, 0.2),//state
+		100,//base damage
+		make_shared<Ammunition>(
+			100,//initial count
+			ImageTexture("Textures/graph.png"),//item texture
+			ImageTexture("Textures/graph.png"),//projectile texture
+			1.0)), 0);//damage modifier and weapon slot
+	hittableUpdateList.push_back(aiShip);
+
 	field1 = make_shared<ParticleField>(
 		50,//count
 		1.3f,//max speed
@@ -386,7 +410,7 @@ void Game::run()
 		{
 		updateGame_ControlLogic();
 		}
-		catch (exception e)
+		catch (const exception& e)
 		{
 			cout << "Exception in Control Logic" << endl;
 			cout << e.what() << endl;
@@ -395,7 +419,7 @@ void Game::run()
 		try{
 		updateEngine_Move();
 		}
-		catch (exception e)
+		catch (const exception& e)
 		{
 			cout << "Exception in Move Logic" << endl;
 			cout << e.what() << endl;
@@ -404,16 +428,25 @@ void Game::run()
 		try{
 		updateGame_GeneralLogic();
 		}
-		catch (exception e)
+		catch (const exception& e)
 		{
 			cout << "Exception in General Logic" << endl;
 			cout << e.what() << endl;
 		}
 
 		try{
+		updateGame_RemovalLogic();
+		}
+		catch (const exception& e)
+		{
+			cout << "Exception in Object Removal" << endl;
+			cout << e.what() << endl;
+		}
+
+		try{
 		draw();
 		}
-		catch (exception e)
+		catch (const exception& e)
 		{
 			cout << "Exception in Draw" << endl;
 			cout << e.what() << endl;
@@ -424,7 +457,7 @@ void Game::run()
 void Game::updateGame_ControlLogic()
 {
 	player->updateGame_ControlLogic();
-	for (auto&& item : updateList)
+	for (auto&& item : hittableUpdateList)
 	{
 		item->updateGame_ControlLogic();
 	}
@@ -433,17 +466,41 @@ void Game::updateGame_ControlLogic()
 void Game::updateGame_GeneralLogic()
 {
 	player->updateGame_GeneralLogic();
-	for (auto&& item : updateList)
+	for (auto&& item : hittableUpdateList)
 	{
 		item->updateGame_GeneralLogic();
 	}
+}
+
+void Game::updateGame_RemovalLogic()
+{
+	size_t n = 0;
+	for (auto&& updateItem : hittableUpdateList)
+	{
+		bool isRemoved = false;
+		for (auto&& removalItem : removalList)
+		{
+			if (removalItem == updateItem.get())
+			{
+				isRemoved = true;
+				break;
+			}
+		}
+		if (!isRemoved)
+		{
+			hittableUpdateList[n] = updateItem;
+			++n;
+		}
+	}
+	hittableUpdateList.resize(n);
+	removalList = vector<const GameObject*>();
 }
 
 void Game::updateEngine_Move()
 {
 	field1->updateEngine_Move();
 	player->updateEngine_Move();
-	for (auto&& item : updateList)
+	for (auto&& item : hittableUpdateList)
 	{
 		item->updateEngine_Move();
 	}
@@ -454,7 +511,7 @@ void Game::draw() const
 	GameDrawEnvironment::clearRender();
 
 	field1->draw();
-	for (auto&& item : updateList)
+	for (auto&& item : hittableUpdateList)
 	{
 		item->draw();
 	}
@@ -463,7 +520,26 @@ void Game::draw() const
 	GameDrawEnvironment::render();
 }
 
-void Game::addToUpdateList(std::shared_ptr<GameObject> item)
+void Game::addHitUpdate(std::shared_ptr<Entity> item)
 {
-	updateList.push_back(item);
+	hittableUpdateList.push_back(item);
+}
+// void Game::addProjectileUpdate(std::shared_ptr<Projectile> item)
+// {
+// 	projectileUpdateList.push_back(item);
+// }
+
+void Game::removeFromUpdates(const GameObject* item)
+{
+	removalList.push_back(item);
+}
+
+void Game::projectileHitDetection(PhysicsObject& projectileState)
+{
+	// cout << hittableUpdateList.size() << endl;
+	for (auto&& item : hittableUpdateList)
+	{
+		bool isHit = checkHit(item->state, projectileState);
+		if (isHit) cout << "reached" << endl;
+	}
 }

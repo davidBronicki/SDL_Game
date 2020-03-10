@@ -41,12 +41,12 @@ Ammunition::Ammunition(unsigned int initialCount,
 void Ammunition::fire(const Kinematic& weaponState,
 	int baseDamage)
 {
-	game.addToUpdateList(
+	game.addHitUpdate(
 		std::make_shared<Projectile>(projectileTexture,
 			PhysicsObject(
 				Kinematic(
 					weaponState.pos,//init position
-					10 * Vector(cos(weaponState.angle), sin(weaponState.angle))
+					60 * Vector(cos(weaponState.angle), sin(weaponState.angle))
 						+ weaponState.vel,//velocity
 					weaponState.angle,//angle
 					0),//angular velocity

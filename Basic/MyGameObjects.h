@@ -31,7 +31,7 @@ Camera
 class GameObject
 {
 protected:
-	
+
 public:
 	virtual void updateGame_ControlLogic() = 0;
 	virtual void updateGame_GeneralLogic() = 0;
@@ -40,9 +40,13 @@ public:
 	virtual void draw() const = 0;
 };
 
+class Game;
+
 class Entity : public GameObject
 {
 protected:
+	friend Game;
+
 	ImageTexture worldTexture;
 	PhysicsObject state;
 
@@ -133,11 +137,21 @@ class Game : public GameObject
 {
 	std::shared_ptr<Player> player;
 	std::shared_ptr<ParticleField> field1;
-	std::vector<std::shared_ptr<GameObject>> updateList;
+
+	// std::vector<std::shared_ptr<GameObject>> backgroundUpdateList;
+	// std::vector<std::shared_ptr<GameObject>> nonHittableUpdateList;
+	std::vector<std::shared_ptr<Entity>> hittableUpdateList;
+	// std::vector<std::shared_ptr<Projectile>> projectileUpdateList;
+	// std::vector<std::shared_ptr<GameObject>> foregroundUpdateList;
+
+	// std::vector<std::shared_ptr<GameObject>> updateList;
+	std::vector<const GameObject*> removalList;
+
 	Game();
 
 	void updateGame_ControlLogic();
 	void updateGame_GeneralLogic();
+	void updateGame_RemovalLogic();
 	void updateEngine_Move();
 	void draw() const;
 public:
@@ -149,5 +163,9 @@ public:
 	}
 
 	void run();
-	void addToUpdateList(std::shared_ptr<GameObject> item);
+	void addHitUpdate(std::shared_ptr<Entity> item);
+	// void addProjectileUpdate(std::shared_ptr<Projectile> item);
+	void removeFromUpdates(const GameObject* item);
+
+	void projectileHitDetection(PhysicsObject& projectileState);
 };

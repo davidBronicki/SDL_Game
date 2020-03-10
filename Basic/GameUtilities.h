@@ -11,6 +11,16 @@ public:
 	}
 };
 
+// struct ControlMap
+// {
+// 	enum{Button, Key} actionType;
+// 	union
+// 	{
+// 		Button b;
+// 		Key k;
+// 	};
+// }
+
 struct GamePosition;
 
 struct Vector
@@ -74,18 +84,34 @@ struct Kinematic
 	void update();
 };
 
+struct LifePointCounter
+{
+	float health;
+	int maxHealth;
+};
+
+struct HitBox
+{
+	float radius;
+	GamePosition center;
+	HitBox* hit;
+};
+
 struct PhysicsObject
 {
-	Kinematic state;
+	Kinematic state;//if not hitable, use Kinematic.
 	float mass, momentInertia, radius;
 	Vector force;
 	float torque;
+
+	HitBox before;//any physics object should be hitable
+	HitBox now;
 
 	PhysicsObject(const Kinematic& inState,
 		float inMass, float inMomentInertia,
 		float inRadius);
 
-	void update();
+	virtual void update();
 
 	inline const GamePosition& getPos() const
 	{
@@ -93,8 +119,15 @@ struct PhysicsObject
 	}
 };
 
-struct LifePointCounter
+bool checkHit(
+	const HitBox& Astart, HitBox& Aend,
+	const HitBox& Bstart, HitBox& Bend);
+
+inline bool checkHit(
+	PhysicsObject& a,
+	PhysicsObject& b)
 {
-	float health;
-	int maxHealth;
-};
+	// if (&a == &b) return false;
+	return checkHit(a.before, a.now,
+		b.before, b.now);
+}

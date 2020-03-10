@@ -13,18 +13,20 @@ Projectile::Projectile(const ImageTexture& inWorldTexture,
 
 void Projectile::updateGame_ControlLogic()
 {
-	--lifetime;
 }
 
 void Projectile::updateGame_GeneralLogic()
 {
-
+	--lifetime;
+	if (lifetime <= 0)
+		game.removeFromUpdates(this);
 }
 
-// void updateEngine_Move() override
-// {
-
-// }
+void Projectile::updateEngine_Move()
+{
+	Entity::updateEngine_Move();
+	game.projectileHitDetection(state);
+}
 
 // void draw() const override
 // {
