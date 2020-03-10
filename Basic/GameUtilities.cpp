@@ -244,7 +244,6 @@ bool checkHit(
 
 	if (timeOfCloseApproach > 1)
 	{//close approach happens after end. Need to check end condition to see what happens
-		cout << "reached 1" << endl;
 		float distSquared = separationEnd.x * separationEnd.x + separationEnd.y * separationEnd.y;
 		if (distSquared <= separationRadius * separationRadius)
 		{//hit!
@@ -256,7 +255,6 @@ bool checkHit(
 	}
 	else if (timeOfCloseApproach > 0)
 	{//close approach is between time steps. Need to interpolate to see how close they are.
-		cout << "reached 2" << endl;
 		//these will generall be "very near hits" or "very near miss".
 		//this is only necessary because the game involves very high velocity projectiles and ships.
 		separationStart += change * timeOfCloseApproach;//changed to the separation at close approach

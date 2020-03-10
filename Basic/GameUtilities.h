@@ -127,7 +127,7 @@ inline bool checkHit(
 	PhysicsObject& a,
 	PhysicsObject& b)
 {
-	// if (&a == &b) return false;
+	if (&a == &b) return false;
 	return checkHit(a.before, a.now,
 		b.before, b.now);
 }

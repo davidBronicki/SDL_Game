@@ -158,7 +158,6 @@ public:
 	inline static Game& getInstance()
 	{
 		static Game g;
-		g.draw();
 		return g;
 	}
 

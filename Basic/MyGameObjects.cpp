@@ -536,7 +536,6 @@ void Game::removeFromUpdates(const GameObject* item)
 
 void Game::projectileHitDetection(PhysicsObject& projectileState)
 {
-	// cout << hittableUpdateList.size() << endl;
 	for (auto&& item : hittableUpdateList)
 	{
 		bool isHit = checkHit(item->state, projectileState);
