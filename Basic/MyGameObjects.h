@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "SDL_Handling.h"
+#include "SDL_Handling/SDL_Handling.h"
 
 #include "GameUtilities.h"
 
@@ -31,13 +31,11 @@ Camera
 class GameObject
 {
 protected:
-	// bool remove = false;//mark this for removal from the game (unload)
+	
 public:
 	virtual void updateGame_ControlLogic() = 0;
 	virtual void updateGame_GeneralLogic() = 0;
 	virtual void updateEngine_Move() = 0;
-
-	// virtual bool updateGame_Removal() = 0;
 
 	virtual void draw() const = 0;
 };
@@ -47,6 +45,11 @@ class Entity : public GameObject
 protected:
 	ImageTexture worldTexture;
 	PhysicsObject state;
+
+	std::vector<std::shared_ptr<Entity>> children;//child states are set relative to this
+	Vector posToParent;//if it has a parent, these are used for relative position setting
+	float angleToParent;//if there is no parent, these play no role
+
 	Entity(const ImageTexture& inWorldTexture,
 		const PhysicsObject& inState);
 public:
@@ -59,11 +62,7 @@ public:
 		return state.state;
 	}
 
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
 	void updateEngine_Move() override;
-
-	// virtual bool updateGame_Removal() = 0;
 
 	void draw() const override;
 };
@@ -73,10 +72,7 @@ class Camera
 	GamePosition pos;
 	float zoom;
 	std::vector<const GameObject*> controlStack;
-	// const GameObject* controller;
 	Camera();
-	// Camera(const Camera& camera);
-	// Camera& operator=(const Camera& camera);
 public:
 	inline static Camera& getInstance()
 	{
@@ -123,7 +119,6 @@ class ParticleField : public GameObject
 	std::vector<PhysicsObject> states;
 	std::vector<float> zVals;
 public:
-	// Particle(GamePosition inPos, Vector inVel, float inZ, float inSize);
 	ParticleField(size_t count, float maxSpeed, float maxRotation,
 		float minZ, float maxZ, float minSize, float maxSize);
 	void updateGame_ControlLogic() override;
@@ -136,7 +131,6 @@ public:
 
 class Game : public GameObject
 {
-	// ImageTexture background;
 	std::shared_ptr<Player> player;
 	std::shared_ptr<ParticleField> field1;
 	std::vector<std::shared_ptr<GameObject>> updateList;
@@ -144,7 +138,6 @@ class Game : public GameObject
 
 	void updateGame_ControlLogic();
 	void updateGame_GeneralLogic();
-	// bool updateGame_Removal();
 	void updateEngine_Move();
 	void draw() const;
 public:

@@ -6,8 +6,8 @@
 #include <exception>
 #include <memory>
 
-#include "SDL_Handling.h"
-#include "MyGameObjects.h"
+#include "SDL_Handling/SDL_Handling.h"
+#include "Basic/MyGameObjects.h"
 
 using namespace std;
 

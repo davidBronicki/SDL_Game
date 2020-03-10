@@ -1,4 +1,4 @@
-#include "SDL_Handling.h"
+#include "SDL_Handling/SDL_Handling.h"
 
 const char* SDL_Exception::what() const throw()
 {

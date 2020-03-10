@@ -1,5 +1,6 @@
-#include "MyGameObjects.h"
-#include "ShipObjects.h"
+#include "Basic/MyGameObjects.h"
+#include "ShipObjects/ShipObjects.h"
+#include "Items/ItemObjects.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -35,19 +36,23 @@ Entity::Entity(const ImageTexture& inWorldTexture,
 {
 }
 
-// void Entity::updateGame_ControlLogic()
-// {
-
-// }
-
-// void Entity::updateGame_GeneralLogic()
-// {
-
-// }
-
 void Entity::updateEngine_Move()
 {
 	state.update();
+	float cAngle = cos(state.state.angle);
+	float sAngle = sin(state.state.angle);
+	for (auto&& child : children)
+	{
+		Vector relativePosition(
+			child->posToParent.x * cAngle - child->posToParent.y * sAngle,
+			child->posToParent.x * sAngle + child->posToParent.y * cAngle);
+		child->state.state.pos = state.state.pos + relativePosition;
+		child->state.state.vel = state.state.vel + Vector(relativePosition.y, - relativePosition.x);
+		child->state.state.angularVel = state.state.angularVel;
+		child->state.state.angle = state.state.angle + angleToParent;
+		if (child->state.state.angle > 2 * M_PI)
+			child->state.state.angle -= 2 * M_PI;//ensure angle is between 0 and 2pi
+	}
 }
 
 void Entity::draw() const
@@ -113,8 +118,8 @@ DrawParameters Camera::stateToParameters(const PhysicsObject& state) const
 	Vector relativePosition(state.state.pos - pos);
 	int size = state.radius * zoom * GameDrawEnvironment::getHeight();
 	return DrawParameters::Rectangle(ScreenRectangle(
-			relativePosition.getX() * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getWidth() / 2 + 0.5f - size,//x
-			-(relativePosition.getY()) * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getHeight() / 2 + 0.5f - size,//y
+			relativePosition.x * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getWidth() / 2 + 0.5f - size,//x
+			-(relativePosition.y) * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getHeight() / 2 + 0.5f - size,//y
 			2 * size,//w
 			2 * size//h
 		),
@@ -132,11 +137,12 @@ DrawParameters Camera::stateToParameters(const PhysicsObject& state, float z) co
 	int size = state.radius * zoom * GameDrawEnvironment::getHeight() * ratio;
 
 	return DrawParameters::Rectangle(ScreenRectangle(
-		relativePosition.getX() * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getWidth() / 2 + 0.5f - size,//x
-		-(relativePosition.getY()) * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getHeight() / 2 + 0.5f - size,//y
+		relativePosition.x * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getWidth() / 2 + 0.5f - size,//x
+		-(relativePosition.y) * zoom * GameDrawEnvironment::getHeight() + GameDrawEnvironment::getHeight() / 2 + 0.5f - size,//y
 		2 * size,//w
 		2 * size//h
-	));
+	),
+		state.state.angle);
 }
 
 Vector Camera::drawSpace() const
@@ -154,8 +160,8 @@ Vector Camera::drawSpace(float z) const
 
 GamePosition Camera::pixelLocation(int x, int y) const
 {
-	float worldX = pos.getX() + (x - GameDrawEnvironment::getWidth() / 2) / (zoom * GameDrawEnvironment::getHeight());
-	float worldY = pos.getY() - (y - GameDrawEnvironment::getHeight() / 2) / (zoom * GameDrawEnvironment::getHeight());
+	float worldX = pos.x + (x - GameDrawEnvironment::getWidth() / 2) / (zoom * GameDrawEnvironment::getHeight());
+	float worldY = pos.y - (y - GameDrawEnvironment::getHeight() / 2) / (zoom * GameDrawEnvironment::getHeight());
 	return GamePosition(worldX, worldY);
 }
 
@@ -172,7 +178,7 @@ Player::Player()
 	Keyboard::subscribeToKeyPressed(
 		function<void(Key)>([this](Key key) -> void
 		{
-			if (key == Key::X)
+			if (key == Key::Space)
 			{
 				try
 				{
@@ -210,21 +216,20 @@ void Player::updateGame_ControlLogic()
 	// {
 	// 	ship->rotateLeft();
 	// }
+
+	ship->pointAtAngle(ship->getKinetics().angle);
+
 	GamePosition shipPos = ship->getKinetics().pos;
 	auto cursorPos = Camera::getInstance().mouseLocation();
 	auto relativePos = cursorPos - shipPos;
-	float relativeAngleToCurser =
-		atan2(relativePos.getY(), relativePos.getX()) - ship->getPhysics().state.angle;
-	if (relativeAngleToCurser < M_PI) relativeAngleToCurser += 2 * M_PI;
-	if (relativeAngleToCurser > M_PI) relativeAngleToCurser -= 2 * M_PI;
-	ship->rotate(relativeAngleToCurser);
+	ship->pointAtAngle(atan2(relativePos.y, relativePos.x));
 
-	if (Mouse::isDown(Button::Left))
+	if (Keyboard::isDown(Key::W))
 	{
 		ship->accelForward();
 	}
 
-	if (Keyboard::isDown(Key::Space))
+	if (Keyboard::isDown(Key::S))
 	{
 		ship->inertialBrake();
 	}
@@ -253,7 +258,6 @@ void Player::draw() const
 ParticleField::ParticleField(size_t count, float maxSpeed, float maxRotation,
 	float minZ, float maxZ, float minSize, float maxSize)
 :
-	// states(count),
 	zVals(count)
 {
 	for (int i = 0; i < count; ++i)
@@ -269,8 +273,8 @@ ParticleField::ParticleField(size_t count, float maxSpeed, float maxRotation,
 		Vector drawSpace(cam.drawSpace(zVals[i]));
 		GamePosition minPoint(cam.getPos() - drawSpace / 2);
 		GamePosition pos(
-			randValue() * drawSpace.getX() + minPoint.getX(),
-			randValue() * drawSpace.getY() + minPoint.getY());
+			randValue() * drawSpace.x + minPoint.x,
+			randValue() * drawSpace.y + minPoint.y);
 		states.push_back(PhysicsObject(
 			Kinematic(pos, velocity, 0,  rotation), 1.0f, 1.0f, size));
 	}
@@ -289,22 +293,22 @@ void ParticleField::updateEngine_Move()
 		GamePosition minPoint(cam.getPos() - drawSpace / 2);
 		Vector relativePosition(states[i].getPos() - minPoint);
 
-		if (relativePosition.getX() < 0.1 * drawSpace.getX())
+		if (relativePosition.x < 0.1 * drawSpace.x)
 		{
-			states[i].state.pos += Vector(1.2 * drawSpace.getX(), 0);
+			states[i].state.pos += Vector(1.2 * drawSpace.x, 0);
 		}
-		else if (relativePosition.getX() > 1.2 * drawSpace.getX())
+		else if (relativePosition.x > 1.2 * drawSpace.x)
 		{
-			states[i].state.pos += Vector(-1.2 * drawSpace.getX(), 0);
+			states[i].state.pos += Vector(-1.2 * drawSpace.x, 0);
 		}
 
-		if (relativePosition.getY() < 0.1 * drawSpace.getY())
+		if (relativePosition.y < 0.1 * drawSpace.y)
 		{
-			states[i].state.pos += Vector(0, 1.2 * drawSpace.getY());
+			states[i].state.pos += Vector(0, 1.2 * drawSpace.y);
 		}
-		else if (relativePosition.getY() > 1.2 * drawSpace.getY())
+		else if (relativePosition.y > 1.2 * drawSpace.y)
 		{
-			states[i].state.pos += Vector(0, -1.2 * drawSpace.getY());
+			states[i].state.pos += Vector(0, -1.2 * drawSpace.y);
 		}
 	}
 }
@@ -336,6 +340,16 @@ Game::Game()
 			1,//weapon count
 			1//shield count
 		}));
+	playerShip->setWeapon(make_shared<Weapon>(
+		ImageTexture("Textures/contour.png"),//weapon texture
+		100,//hp
+		PhysicsObject(Kinematic(GamePosition(0,0)), 1, 1, 0.2),//state
+		100,//base damage
+		make_shared<Ammunition>(
+			100,//initial count
+			ImageTexture("Textures/graph.png"),//item texture
+			ImageTexture("Textures/graph.png"),//projectile texture
+			1.0)), 0);//damage modifier and weapon slot
 	player->newShip(playerShip);
 
 	field1 = make_shared<ParticleField>(

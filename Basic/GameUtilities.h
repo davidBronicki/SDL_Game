@@ -11,28 +11,17 @@ public:
 	}
 };
 
-class GamePosition;
+struct GamePosition;
 
-class Vector
+struct Vector
 {
 	float x;
 	float y;
-	friend GamePosition;
-public:
+
 	Vector();
 	Vector(float inX, float inY);
-	// Vector(const GamePosition& input);
 	float magnitude() const;
 	float magnitudeSqr() const;
-
-	inline float getX() const
-	{
-		return x;
-	}
-	inline float getY() const
-	{
-		return y;
-	}
 
 	Vector operator-() const;
 	Vector& operator+=(const Vector& other);
@@ -47,25 +36,15 @@ Vector operator*(Vector left, float right);
 Vector operator*(float left, Vector right);
 Vector operator/(Vector left, float right);
 
-class GamePosition
+struct GamePosition
 {
 	float x;
 	float y;
-	friend Vector;
-public:
+
 	GamePosition(float inX, float inY);
 	GamePosition(const Vector& input);
 	float distance(const GamePosition& otherPoint) const;
 	float distanceSqr(const GamePosition& otherPoint) const;
-
-	inline float getX() const
-	{
-		return x;
-	}
-	inline float getY() const
-	{
-		return y;
-	}
 
 	GamePosition& operator+=(const Vector& displacement);
 	GamePosition& operator-=(const Vector& displacement);
@@ -76,11 +55,6 @@ GamePosition operator+(GamePosition left, const Vector& right);
 GamePosition operator-(GamePosition left, const Vector& right);
 GamePosition operator+(const Vector& left, GamePosition right);
 Vector operator-(const GamePosition& left, const GamePosition& right);
-
-// class HitBox
-// {
-
-// };
 
 struct Kinematic
 {

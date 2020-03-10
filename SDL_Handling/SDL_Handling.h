@@ -121,19 +121,11 @@ public:
 	ImageTexture(const std::string& pathToImage);
 
 	ImageTexture(const ImageTexture& other);
-	// ImageTexture(ImageTexture&& other);
 	ImageTexture& operator=(const ImageTexture& other);
-	// ImageTexture& operator=(ImageTexture&& other);
 	~ImageTexture();
 
 	void draw(DrawParameters params) const;
 };
-
-// class NullTexture : public ImageTexture
-// {
-// public:
-// 	NullTexture();
-// } NULL_TEXTURE;
 
 //SDL Handler Environments
 
@@ -287,7 +279,6 @@ public:
 		buttonReleased.subscribe(inputFunction);
 	}
 	inline static void subscribeToMouseMotion(std::function<void(Motion, int, int)> inputFunction)
-	//function arguments: void(type of motion, x motion, y motion)
 	{
 		mouseMotion.subscribe(inputFunction);
 	}

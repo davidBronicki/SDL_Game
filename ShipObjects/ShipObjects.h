@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MyGameObjects.h"
+#include "Basic/MyGameObjects.h"
 
 
 class Ship;
@@ -9,41 +9,25 @@ class ShipComponent : public Entity
 {
 protected:
 	LifePointCounter hp;
-	// float mass;
-	// float momentOfInertia;
-	// GamePosition pos;
-	// Vector relativePosition;
-	// float radius;
-	// float angle;
 
 	friend Ship;
 	void setPosition(const GamePosition& shipPosition);
 public:
 	ShipComponent(const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState);
-		 // const Vector& inRelativePosition,
-		// float inRadius);
 
 	void updateGame_ControlLogic() override;
 	void updateGame_GeneralLogic() override;
-	void updateEngine_Move() override;
-
-	// void hudDraw();
-	// void inWorldHudDraw();
-
-	// bool updateGame_Removal() override;
-
-	void draw() const override;
 };
 
-// enum class ComponentType
-// {
-// 	Hull,
-// 	Engine,
-// 	Weapon,
-// 	Shield,
-// 	COMPONENT_TYPE_COUNT
-// };
+enum class ComponentType
+{
+	Hull,
+	Engine,
+	Weapon,
+	Shield,
+	COMPONENT_TYPE_COUNT
+};
 
 class ShipChassis : public ShipComponent
 {
@@ -56,12 +40,6 @@ public:
 	size_t engineCount();
 	size_t weaponCount();
 	size_t shieldCount();
-
-	// std::shared_ptr<Component> addComponent(
-	// 	std::shared_ptr<Component> newComponent,
-	// 	ComponentType type, size_t slotNumber);//returns what was there
-
-	// void draw() const override;
 };
 
 class Hull : public ShipComponent
@@ -93,6 +71,7 @@ public:
 		int maxHP, const PhysicsObject& inState,
 		int inBaseDamage,
 		std::shared_ptr<Ammunition> inAmmo);
+	void pointTo(float angle);
 	void fire();
 };
 
@@ -119,11 +98,6 @@ class Ship : public Entity
 public:
 	Ship(const GamePosition& inPos);
 
-	// inline GamePosition getPos() const
-	// {
-	// 	return state.state.pos;
-	// }
-
 	//changing ship components
 	void setChassis(std::shared_ptr<ShipChassis> newChassis);
 	void setHull(std::shared_ptr<Hull> newHull);
@@ -142,6 +116,9 @@ public:
 	void rotateLeft();
 	void rotateRight();
 	void rotate(float magnitude);
+
+	//general rotation control
+	void pointAtAngle(float angle);
 
 	//weapon control
 	void fire(size_t weaponSlot);

@@ -1,4 +1,4 @@
-#include "SDL_Handling.h"
+#include "SDL_Handling/SDL_Handling.h"
 
 #include <iostream>
 
@@ -210,17 +210,3 @@ void ImageTexture::draw(DrawParameters params) const
 		-params.rotationAngle * 180 / M_PI,
 		NULL, SDL_FLIP_NONE);
 }
-
-/////-------------------NullTexture-------------------/////
-
-// NullTexture::NullTexture()
-// :
-// 	image(NULL),
-// 	references(new int(1))
-// {
-// 	if (this != &NULL_TEXTURE)
-// 	{
-// 		references = NULL_TEXTURE.references();
-// 		++references;
-// 	}
-// }

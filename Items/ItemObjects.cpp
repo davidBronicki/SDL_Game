@@ -1,5 +1,5 @@
-#include "ItemObjects.h"
-#include "Projectiles.h"
+#include "Items/ItemObjects.h"
+#include "Projectiles/Projectiles.h"
 #include "math.h"
 #include <memory>
 
@@ -38,20 +38,21 @@ Ammunition::Ammunition(unsigned int initialCount,
 	damageModifier(inDamageModifier)
 {}
 
-void Ammunition::fire(const GamePosition& weaponPosition,
-	float angleOfFire, int baseDamage)
+void Ammunition::fire(const Kinematic& weaponState,
+	int baseDamage)
 {
 	game.addToUpdateList(
 		std::make_shared<Projectile>(projectileTexture,
 			PhysicsObject(
 				Kinematic(
-					weaponPosition,//init position
-					10 * Vector(cos(angleOfFire), sin(angleOfFire)),//velocity
-					angleOfFire,//angle
+					weaponState.pos,//init position
+					10 * Vector(cos(weaponState.angle), sin(weaponState.angle))
+						+ weaponState.vel,//velocity
+					weaponState.angle,//angle
 					0),//angular velocity
 				1,//mass
 				1,//mom of inertia
-				1),//radius
+				0.1),//radius
 			baseDamage * damageModifier,//damage
 			100));//lifetime
 }

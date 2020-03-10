@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MyGameObjects.h"
+#include "Basic/MyGameObjects.h"
 
 class Item : public GameObject
 {
@@ -29,12 +29,5 @@ public:
 		const ImageTexture& inProjectileTexture,
 		float inDamageModifier);
 
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
-	// void updateEngine_Move() override;
-
-	// void draw() const override;
-
-	void fire(const GamePosition& weaponPosition,
-		float angleOfFire, int baseDamage);
+	void fire(const Kinematic& weaponState, int baseDamage);
 };

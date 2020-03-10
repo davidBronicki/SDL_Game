@@ -1,5 +1,5 @@
-#include "ShipObjects.h"
-#include "ItemObjects.h"
+#include "ShipObjects/ShipObjects.h"
+#include "Items/ItemObjects.h"
 
 #include "math.h"
 
@@ -26,16 +26,6 @@ void ShipComponent::updateGame_GeneralLogic()
 	
 }
 
-void ShipComponent::updateEngine_Move()
-{
-	
-}
-
-void ShipComponent::draw() const
-{
-	worldTexture.draw(cam.stateToParameters(state));
-}
-
 /////----------------ShipChassis----------------\\\\\
 
 ShipChassis::ShipChassis(
@@ -50,15 +40,15 @@ ShipChassis::ShipChassis(
 
 size_t ShipChassis::engineCount()
 {
-	return componentSlots[0];
+	return componentSlots[(size_t)(ComponentType::Engine)];
 }
 size_t ShipChassis::weaponCount()
 {
-	return componentSlots[1];
+	return componentSlots[(size_t)(ComponentType::Weapon)];
 }
 size_t ShipChassis::shieldCount()
 {
-	return componentSlots[2];
+	return componentSlots[(size_t)(ComponentType::Shield)];
 }
 
 /////---------------------Hull----------------------\\\\\
@@ -94,9 +84,14 @@ Weapon::Weapon(const ImageTexture& inTexture,
 	ammo(inAmmo)
 {}
 
+void Weapon::pointTo(float angle)
+{
+	state.state.angle = angle;
+}
+
 void Weapon::fire()
 {
-	ammo->fire(state.state.pos, state.state.angle, baseDamage);
+	ammo->fire(state.state, baseDamage);
 }
 
 /////------------------Shield-------------------\\\\\
@@ -123,15 +118,13 @@ Ship::Ship(const GamePosition& inPos)
 void Ship::setChassis(shared_ptr<ShipChassis> newChassis)
 {
 	chassis = newChassis;
+	children.push_back(chassis);
 	state.mass = chassis->state.mass;
 	state.momentInertia = chassis->state.momentInertia;
 	state.radius = chassis->state.radius;
 	engineBank.resize(chassis->engineCount());
 	weaponBank.resize(chassis->weaponCount());
 	shieldBank.resize(chassis->shieldCount());
-	// std::vector<std::shared_ptr<Engine>> engineBank;
-	// std::vector<std::shared_ptr<Weapon>> weaponBank;
-	// std::vector<std::shared_ptr<Shield>> shieldBank;//put this stuff on chassis?
 }
 
 void Ship::setHull(shared_ptr<Hull> newHull)
@@ -143,8 +136,8 @@ void Ship::setShield(shared_ptr<Shield> newShield, size_t slot)
 {
 	if (slot <= shieldBank.size())
 	{
-		if (shieldBank[slot].get() == NULL) throw SDL_MiscException("shieldBank slot NULL");
 		shieldBank[slot] = newShield;
+		children.push_back(newShield);
 	}
 	else
 	{
@@ -156,8 +149,8 @@ void Ship::setWeapon(shared_ptr<Weapon> newWeapon, size_t slot)
 {
 	if (slot <= weaponBank.size())
 	{
-		if (weaponBank[slot].get() == NULL) throw SDL_MiscException("weaponBank slot NULL");
 		weaponBank[slot] = newWeapon;
+		children.push_back(newWeapon);
 	}
 	else
 	{
@@ -169,8 +162,8 @@ void Ship::setEngine(shared_ptr<Engine> newEngine, size_t slot)
 {
 	if (slot <= engineBank.size())
 	{
-		if (engineBank[slot].get() == NULL) throw SDL_MiscException("engineBank slot NULL");
 		engineBank[slot] = newEngine;
+		children.push_back(newEngine);
 	}
 	else
 	{
@@ -205,7 +198,7 @@ void Ship::inertialBrake()
 
 void Ship::rotateLeft()
 {
-	state.torque += 3;
+	state.torque += 3;//counterclockwise motion is positive
 }
 
 void Ship::rotateRight()
@@ -217,12 +210,24 @@ void Ship::rotate(float magnitude)
 	state.torque += min(max(20 * magnitude, -20.0f), 20.0f);
 }
 
+void Ship::pointAtAngle(float angle)
+{
+	float relativeAngleToCurser =
+		angle - getPhysics().state.angle;
+	if (relativeAngleToCurser < M_PI) relativeAngleToCurser += 2 * M_PI;
+	if (relativeAngleToCurser > M_PI) relativeAngleToCurser -= 2 * M_PI;
+	rotate(relativeAngleToCurser);
+	for (auto&& weapon : weaponBank)
+	{
+		weapon->pointTo(angle);
+	}
+}
 
 void Ship::fire(size_t weaponSlot)
 {
 	if (weaponSlot <= weaponBank.size())
 	{
-		if (engineBank[weaponSlot].get() == NULL) throw SDL_MiscException("weaponBank slot NULL");
+		if (weaponBank[weaponSlot].get() == NULL) throw SDL_MiscException("weaponBank slot NULL");
 		weaponBank[weaponSlot]->fire();
 	}
 	else
@@ -240,17 +245,16 @@ void Ship::updateGame_GeneralLogic(){}
 
 void Ship::updateEngine_Move()
 {
+	Entity::updateEngine_Move();
 	if (inertialDampenerEngaged)
 	{
 		state.force -= state.state.vel * 0.2;
 		state.torque -= state.state.angularVel * 5.0;
 	}
-	state.update();
-	chassis->state.state.pos = state.state.pos;
-	chassis->state.state.angle = state.state.angle;
 }
 
 void Ship::draw() const
 {
 	chassis->draw();
+	weaponBank[0]->draw();
 }
