@@ -11,9 +11,14 @@ Projectile::Projectile(const ImageTexture& inWorldTexture,
 	lifetime(inLifetime)
 {}
 
-void Projectile::updateGame_ControlLogic()
+float Projectile::getDamage()
 {
+	return damage;
 }
+
+// void Projectile::updateGame_ControlLogic()
+// {
+// }
 
 void Projectile::updateGame_GeneralLogic()
 {
@@ -22,10 +27,13 @@ void Projectile::updateGame_GeneralLogic()
 		game.removeFromUpdates(this);
 }
 
-void Projectile::updateEngine_Move()
+void Projectile::updateEngine_Collision()
 {
-	Entity::updateEngine_Move();
-	game.projectileHitDetection(state);
+	Entity* collisionObject(game.projectileHitDetection(state));
+	if (collisionObject != NULL)
+	{
+		collisionObject->collide(*this);
+	}
 }
 
 // void draw() const override

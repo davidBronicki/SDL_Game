@@ -1,5 +1,6 @@
 #include "ShipObjects/ShipObjects.h"
 #include "Items/ItemObjects.h"
+#include "Projectiles/Projectiles.h"
 
 #include "math.h"
 
@@ -16,14 +17,10 @@ ShipComponent::ShipComponent(const ImageTexture& inTexture,
 	hp{(float)maxHP, maxHP}
 {}
 
-void ShipComponent::updateGame_ControlLogic()
+void ShipComponent::collide(Projectile& p)
 {
-	
-}
-
-void ShipComponent::updateGame_GeneralLogic()
-{
-	
+	hp.health -= p.getDamage();
+	game.removeFromUpdates((Entity*)(&p));
 }
 
 /////----------------ShipChassis----------------\\\\\
@@ -150,6 +147,7 @@ void Ship::setWeapon(shared_ptr<Weapon> newWeapon, size_t slot)
 	if (slot <= weaponBank.size())
 	{
 		weaponBank[slot] = newWeapon;
+		newWeapon->noAngleFlag = true;
 		children.push_back(newWeapon);
 	}
 	else
@@ -198,12 +196,12 @@ void Ship::inertialBrake()
 
 void Ship::rotateLeft()
 {
-	state.torque += 3;//counterclockwise motion is positive
+	state.torque += 15;//counterclockwise motion is positive
 }
 
 void Ship::rotateRight()
 {
-	state.torque -= 3;
+	state.torque -= 15;
 }
 void Ship::rotate(float magnitude)
 {
@@ -236,12 +234,12 @@ void Ship::fire(size_t weaponSlot)
 	}
 }
 
-
-
-void Ship::updateGame_ControlLogic()
-{}
-
-void Ship::updateGame_GeneralLogic(){}
+void Ship::collide(Projectile& p)
+{
+	chassis->collide(p);
+	if (chassis->hp.health <= 0)
+		game.removeFromUpdates(this);
+}
 
 void Ship::updateEngine_Move()
 {

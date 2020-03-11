@@ -13,9 +13,13 @@ public:
 		float inDamage,
 		size_t inLifetime);
 
-	void updateGame_ControlLogic() override;
+	float getDamage();
+
+	// void updateGame_ControlLogic() override;
 	void updateGame_GeneralLogic() override;
-	void updateEngine_Move() override;
+	// void updateEngine_Move() override;
+
+	void updateEngine_Collision() override;
 
 	// virtual bool updateGame_Removal() = 0;
 

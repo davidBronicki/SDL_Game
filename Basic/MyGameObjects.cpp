@@ -36,6 +36,11 @@ Entity::Entity(const ImageTexture& inWorldTexture,
 {
 }
 
+void Entity::collide(Projectile& p)
+{
+	// game.removeFromUpdates((GameObject*)(&p));
+}
+
 void Entity::updateEngine_Move()
 {
 	state.update();
@@ -48,10 +53,13 @@ void Entity::updateEngine_Move()
 			child->posToParent.x * sAngle + child->posToParent.y * cAngle);
 		child->state.state.pos = state.state.pos + relativePosition;
 		child->state.state.vel = state.state.vel + Vector(relativePosition.y, - relativePosition.x);
-		child->state.state.angularVel = state.state.angularVel;
-		child->state.state.angle = state.state.angle + angleToParent;
-		if (child->state.state.angle > 2 * M_PI)
-			child->state.state.angle -= 2 * M_PI;//ensure angle is between 0 and 2pi
+		if (!child->noAngleFlag)
+		{
+			child->state.state.angularVel = state.state.angularVel;
+			child->state.state.angle = state.state.angle + angleToParent;
+			if (child->state.state.angle > 2 * M_PI)
+				child->state.state.angle -= 2 * M_PI;//ensure angle is between 0 and 2pi
+		}
 	}
 }
 
@@ -191,6 +199,21 @@ Player::Player()
 				}
 			}
 		}));
+	// Keyboard::subscribeToKeyPressed(
+	// 	function<void(Key)>([this](Key key) -> void
+	// 	{
+	// 		if (key == Key::Left_Alt)
+	// 		{
+	// 			if (controls == controlScheme::PointToRotate)
+	// 			{
+	// 				controls = controlScheme::ButtonRotate;
+	// 			}
+	// 			else
+	// 			{
+	// 				controls = controlScheme::PointToRotate;
+	// 			}
+	// 		}
+	// 	}));
 }
 
 void Player::newShip(shared_ptr<Ship> newShip)
@@ -200,31 +223,33 @@ void Player::newShip(shared_ptr<Ship> newShip)
 
 void Player::updateGame_ControlLogic()
 {
-	// if (Keyboard::isDown(Key::W))
-	// {
-	// 	ship->accelForward();
-	// }
-	// else if (Keyboard::isDown(Key::S))
-	// {
-	// 	ship->accelBackward();
-	// }
-	// if (Keyboard::isDown(Key::D))
-	// {
-	// 	ship->rotateRight();
-	// }
-	// else if (Keyboard::isDown(Key::A))
-	// {
-	// 	ship->rotateLeft();
-	// }
+	switch(controls)
+	{
+		case controlScheme::PointToRotate:
+		{
+			ship->pointAtAngle(ship->getKinetics().angle);
 
-	ship->pointAtAngle(ship->getKinetics().angle);
+			GamePosition shipPos = ship->getKinetics().pos;
+			auto cursorPos = Camera::getInstance().mouseLocation();
+			auto relativePos = cursorPos - shipPos;
+			ship->pointAtAngle(atan2(relativePos.y, relativePos.x));
+		}
+		break;
+		case controlScheme::ButtonRotate:
+		{
+			if (Keyboard::isDown(Key::D))
+			{
+				ship->rotateRight();
+			}
+			else if (Keyboard::isDown(Key::A))
+			{
+				ship->rotateLeft();
+			}
+		}
+		break;
+	}
 
-	GamePosition shipPos = ship->getKinetics().pos;
-	auto cursorPos = Camera::getInstance().mouseLocation();
-	auto relativePos = cursorPos - shipPos;
-	ship->pointAtAngle(atan2(relativePos.y, relativePos.x));
-
-	if (Keyboard::isDown(Key::W))
+	if (Keyboard::isDown(Key::W) || Mouse::isDown(Button::Right))
 	{
 		ship->accelForward();
 	}
@@ -246,6 +271,11 @@ void Player::updateGame_GeneralLogic()
 void Player::updateEngine_Move()
 {
 	ship->updateEngine_Move();
+}
+
+void Player::updateEngine_Collision()
+{
+	ship->updateEngine_Collision();
 }
 
 void Player::draw() const
@@ -280,8 +310,8 @@ ParticleField::ParticleField(size_t count, float maxSpeed, float maxRotation,
 	}
 }
 
-void ParticleField::updateGame_ControlLogic(){}
-void ParticleField::updateGame_GeneralLogic(){}
+// void ParticleField::updateGame_ControlLogic(){}
+// void ParticleField::updateGame_GeneralLogic(){}
 
 void ParticleField::updateEngine_Move()
 {
@@ -313,6 +343,8 @@ void ParticleField::updateEngine_Move()
 	}
 }
 
+// void ParticleField::updateEngine_Collision(){}
+
 void ParticleField::draw() const
 {
 	for (int i = 0; i < states.size(); ++i)
@@ -335,7 +367,6 @@ Game::Game()
 		100,//hp
 		PhysicsObject(Kinematic(GamePosition(0, 0)), 1, 1, 1),
 		vector<size_t>{
-			1,//hull count
 			1,//engine count
 			1,//weapon count
 			1//shield count
@@ -344,7 +375,7 @@ Game::Game()
 		ImageTexture("Textures/contour.png"),//weapon texture
 		100,//hp
 		PhysicsObject(Kinematic(GamePosition(0,0)), 1, 1, 0.2),//state
-		100,//base damage
+		10,//base damage
 		make_shared<Ammunition>(
 			100,//initial count
 			ImageTexture("Textures/graph.png"),//item texture
@@ -359,7 +390,6 @@ Game::Game()
 		100,//hp
 		PhysicsObject(Kinematic(GamePosition(0, 0)), 1, 1, 1),
 		vector<size_t>{
-			1,//hull count
 			1,//engine count
 			1,//weapon count
 			1//shield count
@@ -406,51 +436,12 @@ void Game::run()
 	{
 		GameControlEnvironment::sortQueue();
 
-		try
-		{
 		updateGame_ControlLogic();
-		}
-		catch (const exception& e)
-		{
-			cout << "Exception in Control Logic" << endl;
-			cout << e.what() << endl;
-		}
-
-		try{
 		updateEngine_Move();
-		}
-		catch (const exception& e)
-		{
-			cout << "Exception in Move Logic" << endl;
-			cout << e.what() << endl;
-		}
-
-		try{
+		updateEngine_Collision();
 		updateGame_GeneralLogic();
-		}
-		catch (const exception& e)
-		{
-			cout << "Exception in General Logic" << endl;
-			cout << e.what() << endl;
-		}
-
-		try{
 		updateGame_RemovalLogic();
-		}
-		catch (const exception& e)
-		{
-			cout << "Exception in Object Removal" << endl;
-			cout << e.what() << endl;
-		}
-
-		try{
 		draw();
-		}
-		catch (const exception& e)
-		{
-			cout << "Exception in Draw" << endl;
-			cout << e.what() << endl;
-		}
 	}
 }
 
@@ -506,6 +497,16 @@ void Game::updateEngine_Move()
 	}
 }
 
+void Game::updateEngine_Collision()
+{
+	field1->updateEngine_Collision();
+	player->updateEngine_Collision();
+	for (auto&& item : hittableUpdateList)
+	{
+		item->updateEngine_Collision();
+	}
+}
+
 void Game::draw() const
 {
 	GameDrawEnvironment::clearRender();
@@ -524,25 +525,31 @@ void Game::addHitUpdate(std::shared_ptr<Entity> item)
 {
 	hittableUpdateList.push_back(item);
 }
-// void Game::addProjectileUpdate(std::shared_ptr<Projectile> item)
-// {
-// 	projectileUpdateList.push_back(item);
-// }
 
 void Game::removeFromUpdates(const GameObject* item)
 {
 	removalList.push_back(item);
 }
 
-void Game::projectileHitDetection(PhysicsObject& projectileState)
+Entity* Game::projectileHitDetection(PhysicsObject& projectileState)
 {
-	// vector<
+	shared_ptr<Entity> hitObject;
+	float timeOfImpact = 2;
 	for (auto&& item : hittableUpdateList)
 	{
 		float hitTime = checkHit(item->state, projectileState);
-		if (hitTime != -1 && &(item->state) != &projectileState)
+		if (hitTime >= 0 && hitTime < timeOfImpact)
 		{
-			cout << hitTime << endl;
+			timeOfImpact = hitTime;
+			hitObject = item;
 		}
+	}
+	if (timeOfImpact == 2)
+	{
+		return NULL;
+	}
+	else
+	{
+		return hitObject.get();
 	}
 }

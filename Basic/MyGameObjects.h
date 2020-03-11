@@ -33,19 +33,22 @@ class GameObject
 protected:
 
 public:
-	virtual void updateGame_ControlLogic() = 0;
-	virtual void updateGame_GeneralLogic() = 0;
-	virtual void updateEngine_Move() = 0;
+	virtual void updateGame_ControlLogic(){}
+	virtual void updateGame_GeneralLogic(){}
 
-	virtual void draw() const = 0;
+	virtual void updateEngine_Move(){}
+	virtual void updateEngine_Collision(){}
+
+	virtual void draw() const{}
 };
 
 class Game;
+class Projectile;
 
 class Entity : public GameObject
 {
 protected:
-	friend Game;
+	friend Game;//for collision detection
 
 	ImageTexture worldTexture;
 	PhysicsObject state;
@@ -57,6 +60,7 @@ protected:
 	Entity(const ImageTexture& inWorldTexture,
 		const PhysicsObject& inState);
 public:
+	bool noAngleFlag = false;
 	inline const PhysicsObject& getPhysics() const
 	{
 		return state;
@@ -66,7 +70,10 @@ public:
 		return state.state;
 	}
 
+	virtual void collide(Projectile& p);
+
 	void updateEngine_Move() override;
+	// void updateEngine_Collision() override;
 
 	void draw() const override;
 };
@@ -105,6 +112,13 @@ class Ship;
 class Player : public GameObject
 {
 	std::shared_ptr<Ship> ship;
+
+	enum controlScheme
+	{
+		PointToRotate,
+		ButtonRotate
+	} controls = controlScheme::PointToRotate;
+
 public:
 	Player();
 
@@ -114,6 +128,7 @@ public:
 	void updateGame_GeneralLogic() override;
 
 	void updateEngine_Move() override;
+	void updateEngine_Collision() override;
 
 	void draw() const override;
 };
@@ -125,10 +140,11 @@ class ParticleField : public GameObject
 public:
 	ParticleField(size_t count, float maxSpeed, float maxRotation,
 		float minZ, float maxZ, float minSize, float maxSize);
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
+	// void updateGame_ControlLogic() override;
+	// void updateGame_GeneralLogic() override;
 
 	void updateEngine_Move() override;
+	// void updateEngine_Collision() override;
 
 	void draw() const override;
 };
@@ -149,11 +165,12 @@ class Game : public GameObject
 
 	Game();
 
-	void updateGame_ControlLogic();
-	void updateGame_GeneralLogic();
+	void updateGame_ControlLogic() override;
+	void updateGame_GeneralLogic() override;
 	void updateGame_RemovalLogic();
-	void updateEngine_Move();
-	void draw() const;
+	void updateEngine_Move() override;
+	void updateEngine_Collision() override;
+	void draw() const override;
 public:
 	inline static Game& getInstance()
 	{
@@ -166,5 +183,5 @@ public:
 	// void addProjectileUpdate(std::shared_ptr<Projectile> item);
 	void removeFromUpdates(const GameObject* item);
 
-	void projectileHitDetection(PhysicsObject& projectileState);
+	Entity* projectileHitDetection(PhysicsObject& projectileState);
 };

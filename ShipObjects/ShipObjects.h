@@ -16,13 +16,15 @@ public:
 	ShipComponent(const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState);
 
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
+	void collide(Projectile& p) override;
+
+	// void updateGame_ControlLogic() override;
+	// void updateGame_GeneralLogic() override;
+	// void updateEngine_Collision() override;
 };
 
 enum class ComponentType
 {
-	Hull,
 	Engine,
 	Weapon,
 	Shield,
@@ -98,7 +100,8 @@ class Ship : public Entity
 public:
 	Ship(const GamePosition& inPos);
 
-	//changing ship components
+	/////changing ship components\\\\\
+
 	void setChassis(std::shared_ptr<ShipChassis> newChassis);
 	void setHull(std::shared_ptr<Hull> newHull);
 	void setShield(std::shared_ptr<Shield> newShield, size_t slot);
@@ -123,11 +126,15 @@ public:
 	//weapon control
 	void fire(size_t weaponSlot);
 
-	//GameObject functions
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
+	/////parrent class functions\\\\\
+
+	void collide(Projectile& p) override;
+
+	// void updateGame_ControlLogic() override;
+	// void updateGame_GeneralLogic() override;
 
 	void updateEngine_Move() override;
+	// void updateEngine_Collision() override;
 
 	void draw() const override;
 };
