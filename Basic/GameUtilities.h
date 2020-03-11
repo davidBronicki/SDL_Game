@@ -11,16 +11,6 @@ public:
 	}
 };
 
-// struct ControlMap
-// {
-// 	enum{Button, Key} actionType;
-// 	union
-// 	{
-// 		Button b;
-// 		Key k;
-// 	};
-// }
-
 struct GamePosition;
 
 struct Vector
@@ -94,7 +84,6 @@ struct HitBox
 {
 	float radius;
 	GamePosition center;
-	HitBox* hit;
 };
 
 struct PhysicsObject
@@ -104,7 +93,7 @@ struct PhysicsObject
 	Vector force;
 	float torque;
 
-	HitBox before;//any physics object should be hitable
+	HitBox before;//any physics object should be hittable
 	HitBox now;
 
 	PhysicsObject(const Kinematic& inState,
@@ -119,15 +108,15 @@ struct PhysicsObject
 	}
 };
 
-bool checkHit(
+float checkHit(
 	const HitBox& Astart, HitBox& Aend,
 	const HitBox& Bstart, HitBox& Bend);
 
-inline bool checkHit(
+inline float checkHit(
 	PhysicsObject& a,
 	PhysicsObject& b)
 {
-	if (&a == &b) return false;
+	// if (&a == &b) return false;
 	return checkHit(a.before, a.now,
 		b.before, b.now);
 }

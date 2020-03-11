@@ -206,8 +206,8 @@ PhysicsObject::PhysicsObject(const Kinematic& inState,
 	radius(inRadius),
 	force(),
 	torque(0),
-	before{inRadius, inState.pos, NULL},
-	now{inRadius, inState.pos, NULL}
+	before{inRadius, inState.pos},
+	now{inRadius, inState.pos}
 {}
 
 void PhysicsObject::update()
@@ -227,45 +227,75 @@ void PhysicsObject::update()
 
 #include <iostream>
 
-bool checkHit(
+float checkHit(
 	const HitBox& Astart, HitBox& Aend,
 	const HitBox& Bstart, HitBox& Bend)
-{
+{//returns relative time to impact (from start) for a hit, and -1 for a miss.
+
 	Vector separationStart = Bstart.center - Astart.center;
-	Vector separationEnd = Bend.center - Aend.center;
-	Vector change = separationEnd - separationStart;//This is the rate of change of the separation
-	float timeOfCloseApproach =
-		(-separationStart.x * change.x - separationStart.y * change.y)
-			/ (change.x * change.x + change.y * change.y);
+	Vector change = Bend.center - Aend.center;//temperary variable; should be called "separationEnd"
+	change -= separationStart;//"change" now represents the rate of change
 
-	float separationRadius = Astart.radius + Bstart.radius;//total distance for a hit
+	//the following are used for the collision condition and time of collision calulations
+	float velocityMagnitudeSquared = change.x * change.x + change.y * change.y;
+	float posDotVelocity = separationStart.x * change.x + separationStart.y * change.y;
+	float totalRadius = Astart.radius + Bstart.radius;
+	float distanceDifference = separationStart.x * separationStart.x
+		+ separationStart.y * separationStart.y - totalRadius * totalRadius;
 
-	return false;
+	float discriminant = posDotVelocity * posDotVelocity - velocityMagnitudeSquared * distanceDifference;
 
-	if (timeOfCloseApproach > 1)
-	{//close approach happens after end. Need to check end condition to see what happens
-		float distSquared = separationEnd.x * separationEnd.x + separationEnd.y * separationEnd.y;
-		if (distSquared <= separationRadius * separationRadius)
-		{//hit!
-			Aend.hit = &Bend;
-			Bend.hit = &Aend;
-			return true;
-		}
-		else return false;
+	if (discriminant < 0)//from quadratic formula, no collision in this case
+	{
+		return -1;
 	}
-	else if (timeOfCloseApproach > 0)
-	{//close approach is between time steps. Need to interpolate to see how close they are.
-		//these will generall be "very near hits" or "very near miss".
-		//this is only necessary because the game involves very high velocity projectiles and ships.
-		separationStart += change * timeOfCloseApproach;//changed to the separation at close approach
-		float distSquared = separationStart.x * separationStart.x + separationStart.y * separationStart.y;
-		if (distSquared <= separationRadius * separationRadius)
-		{//hit!
-			Aend.hit = &Bend;
-			Bend.hit = &Aend;
-			return true;
-		}
-		else return false;
+	else
+	{
+		float timeOfCollision = (-posDotVelocity - sqrt(discriminant)) / velocityMagnitudeSquared;
+		// if (timeOfCollision > 1) return -1;//collision didn't happen in this time step
+		// else if (timeOfCollision >= 0) return timeOfCollision;
+		// else
+		// {
+		// 	timeOfCollision = (-posDotVelocity + sqrt(discriminant)) / velocityMagnitudeSquared;
+		// 	if (timeOfCollision > 1 || timeOfCollision < 0) return -1;
+		// 	else return timeOfCollision;
+		// }
+		if (timeOfCollision > 1 || timeOfCollision < 0) return -1;//collision didn't happen in this time step
+		else return timeOfCollision;
 	}
-	else return false;//close approach is before start; would have been detected in previous time step.
+
+
+
+
+	// Vector separationStart = Bstart.center - Astart.center;
+	// Vector separationEnd = Bend.center - Aend.center;
+	// Vector change = separationEnd - separationStart;//This is the rate of change of the separation
+	// float timeOfCloseApproach =
+	// 	(-separationStart.x * change.x - separationStart.y * change.y)
+	// 		/ (change.x * change.x + change.y * change.y);
+
+	// float separationRadius = Astart.radius + Bstart.radius;//total distance for a hit
+
+	// if (timeOfCloseApproach > 1)
+	// {//close approach happens after end. Need to check end condition to see what happens
+	// 	float distSquared = separationEnd.x * separationEnd.x + separationEnd.y * separationEnd.y;
+	// 	if (distSquared <= separationRadius * separationRadius)
+	// 	{//hit!
+	// 		return true;
+	// 	}
+	// 	else return -1;
+	// }
+	// else if (timeOfCloseApproach > 0)
+	// {//close approach is between time steps. Need to interpolate to see how close they are.
+	// 	//these will generall be "very near hits" or "very near miss".
+	// 	//this is only necessary because the game involves very high velocity projectiles and ships.
+	// 	separationStart += change * timeOfCloseApproach;//changed to the separation at close approach
+	// 	float distSquared = separationStart.x * separationStart.x + separationStart.y * separationStart.y;
+	// 	if (distSquared <= separationRadius * separationRadius)
+	// 	{//hit!
+	// 		return timeOfCloseApproach;
+	// 	}
+	// 	else return -1;
+	// }
+	// else return -1;//close approach is before start; would have been detected in previous time step.
 }
