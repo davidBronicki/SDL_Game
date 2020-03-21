@@ -3,6 +3,9 @@
 #include <memory>
 #include <vector>
 
+#include "SDL_Handling/SDL_Handling.h"
+#include "Basic/GameUtilities.h"
+
 enum class Control
 {
 	Forward,
@@ -37,7 +40,8 @@ public:
 	GamePosition const& pos() const virtual = 0;
 	void setPos(GamePosition const& newPos) virtual = 0;
 };
-class I_WorldKinetic : public I_WorldPosition
+class I_WorldKinetic:
+	public virtual I_WorldPosition
 {
 public:
 	Vector const& vel() const virtual = 0;
@@ -48,7 +52,7 @@ public:
 
 	void update(float dt) virtual = 0;
 };
-class I_WorldPhysics : public I_WorldKinetic
+class I_WorldPhysics : public virtual I_WorldKinetic
 {
 public:
 	void applyForce(Vector const& force) virtual = 0;
@@ -69,12 +73,22 @@ class I_Collidable
 	HitBox previousHitBox;
 };
 
+class I_FullObject :
+	public virtual I_CoreUpdate,
+	public virtual I_Draw,
+	public virtual I_Collidable,
+	public virtual I_WorldKinetic
+{};
+
 class I_Composite
 {
-protected:
-	std::vector<std::shared_ptr<I_Collidable>> children;
 public:
 	void updateCollisions() virtual = 0;
+};
+
+class I_Child : public virtual I_FullObject
+{
+	std::weak_ptr<I_Composite> parent;
 };
 
 class I_Controllable
@@ -84,6 +98,35 @@ public:
 	void simpleControl(Control key, float controlValue) virtual = 0;
 	void advancedControl(Control key,
 		std::vector<float> const& controlValues) virtual = 0;
+};
+
+class I_WorldSpace:
+	public virtual I_CoreUpdate,
+	public virtual I_Composite,
+	public virtual I_Draw
+{
+};
+
+class I_ChildSpace;
+
+class I_ParentSpace:
+	public virtual I_WorldSpace
+{
+	std::vector<std::shared_ptr<I_ChildSpace>> childSpaces
+public:
+	void updateMovement() override;
+	void updateControl() override;
+	void updateLogic() override;
+
+	void updateCollisions() override;
+
+	void draw() override;
+}
+
+class I_ChildSpace:
+	public virtual I_WorldSpace
+{
+	std::weak_ptr<WorldSpace> parentSpace;
 };
 
 /////------------external interface functions-----------\\\\\
@@ -106,7 +149,17 @@ inline float getExitTime(
 
 /////---------------basic implementations---------------\\\\\
 
-class Pure_WorldPosition : public I_WorldPosition
+class Pure_Draw:
+	public virtual I_Draw
+{
+	ImageTexture worldTexture;
+public:
+	Pure_Draw(ImageTexture const& inTexture)
+	: worldTexture(inTexture){}
+};
+
+class Pure_WorldPosition:
+	public virtual I_WorldPosition
 {
 	GamePosition pos;
 public:
@@ -124,7 +177,8 @@ public:
 	}
 };
 
-class Pure_WorldKinetic : public I_WorldKinetic
+class Pure_WorldKinetic:
+	public virtual I_WorldKinetic
 {
 	Kinetic state;
 public:
@@ -167,7 +221,8 @@ public:
 	}
 };
 
-class Pure_WorldPhysics : public I_WorldPhysics
+class Pure_WorldPhysics:
+	public virtual I_WorldPhysics
 {
 	PhysicsObject state;
 public:
