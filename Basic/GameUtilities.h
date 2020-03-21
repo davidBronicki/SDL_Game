@@ -1,5 +1,18 @@
 #pragma once
 
+#include <random>
+
+float inline randValue()
+{
+	return (float)std::rand() / RAND_MAX;
+}
+
+// template<typename T, typename S>
+// T* getP(shared_ptr<S> input)
+// {
+// 	return (T*)(input.get());
+// }
+
 class GameUpdateEnvironment
 {
 	static float dt;
@@ -41,6 +54,7 @@ struct GamePosition
 	float x;
 	float y;
 
+	GamePosition();
 	GamePosition(float inX, float inY);
 	GamePosition(const Vector& input);
 	float distance(const GamePosition& otherPoint) const;
@@ -62,6 +76,7 @@ struct Kinematic
 	Vector vel, acc;
 	float angle, angularVel, angularAcc;
 
+	Kinematic();
 	Kinematic(const GamePosition& inPos);
 	Kinematic(const GamePosition& inPos,
 		const Vector& inVel);
@@ -71,7 +86,11 @@ struct Kinematic
 		const Vector& inVel,
 		float inAngle, float inAngularVel);
 
-	void update();
+	inline void update()
+	{
+		update(GameUpdateEnvironment::getDT());
+	}
+	void update(float dt);
 };
 
 struct LifePointCounter
@@ -88,19 +107,20 @@ struct HitBox
 
 struct PhysicsObject
 {
-	Kinematic state;//if not hitable, use Kinematic.
+	Kinematic state;
 	float mass, momentInertia, radius;
 	Vector force;
 	float torque;
-
-	HitBox before;//any physics object should be hittable
-	HitBox now;
 
 	PhysicsObject(const Kinematic& inState,
 		float inMass, float inMomentInertia,
 		float inRadius);
 
-	virtual void update();
+	inline void update()
+	{
+		update(GameUpdateEnvironment::getDT());
+	}
+	void update(float dt);
 
 	inline const GamePosition& getPos() const
 	{
@@ -108,15 +128,10 @@ struct PhysicsObject
 	}
 };
 
-float checkHit(
-	const HitBox& Astart, HitBox& Aend,
-	const HitBox& Bstart, HitBox& Bend);
+float getCollisionTime(
+	const HitBox& Astart, const HitBox& Aend,
+	const HitBox& Bstart, const HitBox& Bend);
 
-inline float checkHit(
-	PhysicsObject& a,
-	PhysicsObject& b)
-{
-	// if (&a == &b) return false;
-	return checkHit(a.before, a.now,
-		b.before, b.now);
-}
+float getExitTime(
+	const HitBox& Astart, const HitBox& Aend,
+	const HitBox& Bstart, const HitBox& Bend);

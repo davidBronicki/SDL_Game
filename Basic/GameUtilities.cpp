@@ -4,6 +4,10 @@
 
 using namespace std;
 
+/////-------------GameUpdateEnvironment---------------\\\\\
+
+float GameUpdateEnvironment::dt = 1.0/60;
+
 /////-----------------Vector------------------\\\\\
 
 Vector::Vector()
@@ -85,6 +89,9 @@ Vector operator/(Vector left, float right)
 
 /////-------------GamePosition------------------\\\\\
 
+GamePosition::GamePosition()
+	:x(0), y(0){}
+
 GamePosition::GamePosition(float inX, float inY)
 	:x(inX), y(inY){}
 
@@ -139,6 +146,16 @@ Vector operator-(const GamePosition& left, const GamePosition& right)
 
 /////-----------------Kinematic--------------------\\\\\
 
+Kinematic::Kinematic()
+:
+	pos(),
+	vel(),
+	acc(),
+	angle(0),
+	angularVel(0),
+	angularAcc(0)
+{}
+
 Kinematic::Kinematic(const GamePosition& inPos)
 :
 	pos(inPos),
@@ -183,15 +200,15 @@ Kinematic::Kinematic(const GamePosition& inPos,
 	angularAcc(0)
 {}
 
-void Kinematic::update()
+void Kinematic::update(float dt)
 {
-	acc *= GameUpdateEnvironment::getDT();
+	acc *= dt;
 	vel += acc;
-	pos += GameUpdateEnvironment::getDT() * vel;
+	pos += dt * vel;
 	acc = Vector();
 
-	angularVel += angularAcc * GameUpdateEnvironment::getDT();
-	angle += GameUpdateEnvironment::getDT() * angularVel;
+	angularVel += angularAcc * dt;
+	angle += dt * angularVel;
 	angularAcc = 0;
 }
 
@@ -205,20 +222,16 @@ PhysicsObject::PhysicsObject(const Kinematic& inState,
 	momentInertia(inMomentInertia),
 	radius(inRadius),
 	force(),
-	torque(0),
-	before{inRadius, inState.pos},
-	now{inRadius, inState.pos}
+	torque(0)
 {}
 
-void PhysicsObject::update()
+void PhysicsObject::update(float dt)
 {
-	before.center = state.pos;
 	state.acc = force / mass;
 	state.angularAcc = torque / momentInertia;
-	state.update();
+	state.update(dt);
 	force = Vector(0, 0);
 	torque = 0;
-	now.center = state.pos;
 }
 
 /////---------------LifePointCounter-------------\\\\\
@@ -227,9 +240,9 @@ void PhysicsObject::update()
 
 #include <iostream>
 
-float checkHit(
-	const HitBox& Astart, HitBox& Aend,
-	const HitBox& Bstart, HitBox& Bend)
+float getCollisionTime(
+	const HitBox& Astart, HitBox const& Aend,
+	const HitBox& Bstart, HitBox const& Bend)
 {//returns relative time to impact (from start) for a hit, and -1 for a miss.
 
 	Vector separationStart = Bstart.center - Astart.center;
@@ -237,65 +250,54 @@ float checkHit(
 	change -= separationStart;//"change" now represents the rate of change
 
 	//the following are used for the collision condition and time of collision calulations
-	float velocityMagnitudeSquared = change.x * change.x + change.y * change.y;
-	float posDotVelocity = separationStart.x * change.x + separationStart.y * change.y;
+	float velocityMagnitudeSquared = change.magnitudeSqr();
+	float posDotVelocity = separationStart.x * change.x
+		+ separationStart.y * change.y;
 	float totalRadius = Astart.radius + Bstart.radius;
-	float distanceDifference = separationStart.x * separationStart.x
-		+ separationStart.y * separationStart.y - totalRadius * totalRadius;
+	float distanceDifference = separationStart.magnitudeSqr()
+		- totalRadius * totalRadius;
 
-	float discriminant = posDotVelocity * posDotVelocity - velocityMagnitudeSquared * distanceDifference;
+	float discriminant = posDotVelocity * posDotVelocity
+		- velocityMagnitudeSquared * distanceDifference;
 
 	if (discriminant < 0)//from quadratic formula, no collision in this case
 	{
 		return -1;
 	}
 	else
-	{
-		float timeOfCollision = (-posDotVelocity - sqrt(discriminant)) / velocityMagnitudeSquared;
-		// if (timeOfCollision > 1) return -1;//collision didn't happen in this time step
-		// else if (timeOfCollision >= 0) return timeOfCollision;
-		// else
-		// {
-		// 	timeOfCollision = (-posDotVelocity + sqrt(discriminant)) / velocityMagnitudeSquared;
-		// 	if (timeOfCollision > 1 || timeOfCollision < 0) return -1;
-		// 	else return timeOfCollision;
-		// }
-		if (timeOfCollision > 1 || timeOfCollision < 0) return -1;//collision didn't happen in this time step
-		else return timeOfCollision;
-	}
-
-
-
-
-	// Vector separationStart = Bstart.center - Astart.center;
-	// Vector separationEnd = Bend.center - Aend.center;
-	// Vector change = separationEnd - separationStart;//This is the rate of change of the separation
-	// float timeOfCloseApproach =
-	// 	(-separationStart.x * change.x - separationStart.y * change.y)
-	// 		/ (change.x * change.x + change.y * change.y);
-
-	// float separationRadius = Astart.radius + Bstart.radius;//total distance for a hit
-
-	// if (timeOfCloseApproach > 1)
-	// {//close approach happens after end. Need to check end condition to see what happens
-	// 	float distSquared = separationEnd.x * separationEnd.x + separationEnd.y * separationEnd.y;
-	// 	if (distSquared <= separationRadius * separationRadius)
-	// 	{//hit!
-	// 		return true;
-	// 	}
-	// 	else return -1;
+		return (-posDotVelocity + sqrt(discriminant))
+			/ velocityMagnitudeSquared;
+	// {
+	// 	float timeOfCollision = (-posDotVelocity - sqrt(discriminant)) / velocityMagnitudeSquared;
+	// 	if (timeOfCollision > 1 || timeOfCollision < 0) return -1;//collision didn't happen in this time step
+	// 	else return timeOfCollision;
 	// }
-	// else if (timeOfCloseApproach > 0)
-	// {//close approach is between time steps. Need to interpolate to see how close they are.
-	// 	//these will generall be "very near hits" or "very near miss".
-	// 	//this is only necessary because the game involves very high velocity projectiles and ships.
-	// 	separationStart += change * timeOfCloseApproach;//changed to the separation at close approach
-	// 	float distSquared = separationStart.x * separationStart.x + separationStart.y * separationStart.y;
-	// 	if (distSquared <= separationRadius * separationRadius)
-	// 	{//hit!
-	// 		return timeOfCloseApproach;
-	// 	}
-	// 	else return -1;
-	// }
-	// else return -1;//close approach is before start; would have been detected in previous time step.
+}
+
+
+float getExitTime(
+//get the moment two objects are no longer touching
+	const HitBox& Astart, const HitBox& Aend,
+	const HitBox& Bstart, const HitBox& Bend)
+{
+
+	Vector separationStart = Bstart.center - Astart.center;
+	Vector change = Bend.center - Aend.center;//temperary variable; should be called "separationEnd"
+	change -= separationStart;//"change" now represents the rate of change
+
+	//the following are used for the collision condition and time of collision calulations
+	float velocityMagnitudeSquared = change.magnitudeSqr();
+	float posDotVelocity = separationStart.x * change.x
+		+ separationStart.y * change.y;
+	float totalRadius = Astart.radius + Bstart.radius;
+	float distanceDifference = separationStart.magnitudeSqr()
+		- totalRadius * totalRadius;
+
+	float discriminant = posDotVelocity * posDotVelocity
+		- velocityMagnitudeSquared * distanceDifference;
+	if (discriminant < 0)//shouldn't happen, but just in case. (should throw an error lol)
+		return -1;
+	else
+		return (-posDotVelocity + sqrt(discriminant))
+			/ velocityMagnitudeSquared;
 }

@@ -1,187 +1,37 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "SDL_Handling/SDL_Handling.h"
+#include "Basic/GameUtilities.h"
+// #include "Basic/BasicGameObjects.h"
+#include "Basic/AdditionalObjects.h"
+#include "Basic/Player.h"
+#include "Basic/Game.h"
 
-#include "GameUtilities.h"
+#include "Interfaces.h"
 
-#define cam Camera::getInstance()
-#define game Game::getInstance()
+class WorldObject : public I_CoreUpdate, I_Draw
+{
+
+};
+
+
 
 /*
 GameObject
+	*Player
+	ParticleField
 	Item
 		Ammunition
 	Entity
 		Projectile
-		Ship
 		ShipComponent
 			ShipChassis
 			Hull
 			Engine
 			Weapon
 			Shield
-	Game
-	*Player
+		CompositeEntity
+			Ship
+			Game
 Camera
 */
-
-class GameObject
-{
-protected:
-
-public:
-	virtual void updateGame_ControlLogic(){}
-	virtual void updateGame_GeneralLogic(){}
-
-	virtual void updateEngine_Move(){}
-	virtual void updateEngine_Collision(){}
-
-	virtual void draw() const{}
-};
-
-class Game;
-class Projectile;
-
-class Entity : public GameObject
-{
-protected:
-	friend Game;//for collision detection
-
-	ImageTexture worldTexture;
-	PhysicsObject state;
-
-	std::vector<std::shared_ptr<Entity>> children;//child states are set relative to this
-	Vector posToParent;//if it has a parent, these are used for relative position setting
-	float angleToParent;//if there is no parent, these play no role
-
-	Entity(const ImageTexture& inWorldTexture,
-		const PhysicsObject& inState);
-public:
-	bool noAngleFlag = false;
-	inline const PhysicsObject& getPhysics() const
-	{
-		return state;
-	}
-	inline const Kinematic& getKinetics() const
-	{
-		return state.state;
-	}
-
-	virtual void collide(Projectile& p);
-
-	void updateEngine_Move() override;
-	// void updateEngine_Collision() override;
-
-	void draw() const override;
-};
-
-class Camera
-{
-	GamePosition pos;
-	float zoom;
-	std::vector<const GameObject*> controlStack;
-	Camera();
-public:
-	inline static Camera& getInstance()
-	{
-		static Camera camera;
-		return camera;
-	}
-	void take(const GameObject* newController);
-	bool setPosition(const GameObject* requester, const GamePosition& newPos);
-	bool setZoom(const GameObject* requester, float newZoom);
-	void release(const GameObject* controller);
-
-	DrawParameters stateToParameters(const PhysicsObject& state) const;
-	DrawParameters stateToParameters(const PhysicsObject& state, float z) const;
-	Vector drawSpace() const;//get width and height drawn on screen (at player z level)
-	Vector drawSpace(float z) const;
-	GamePosition pixelLocation(int x, int y) const;//get the in world location of a point on screen
-	GamePosition mouseLocation() const;//get in world position of mouse (at player z level)
-	inline GamePosition getPos() const//get camera postion
-	{
-		return pos;
-	}
-};
-
-class Ship;
-
-class Player : public GameObject
-{
-	std::shared_ptr<Ship> ship;
-
-	enum controlScheme
-	{
-		PointToRotate,
-		ButtonRotate
-	} controls = controlScheme::PointToRotate;
-
-public:
-	Player();
-
-	void newShip(std::shared_ptr<Ship> newShip);
-
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
-
-	void updateEngine_Move() override;
-	void updateEngine_Collision() override;
-
-	void draw() const override;
-};
-
-class ParticleField : public GameObject
-{
-	std::vector<PhysicsObject> states;
-	std::vector<float> zVals;
-public:
-	ParticleField(size_t count, float maxSpeed, float maxRotation,
-		float minZ, float maxZ, float minSize, float maxSize);
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
-
-	void updateEngine_Move() override;
-	// void updateEngine_Collision() override;
-
-	void draw() const override;
-};
-
-class Game : public GameObject
-{
-	std::shared_ptr<Player> player;
-	std::shared_ptr<ParticleField> field1;
-
-	// std::vector<std::shared_ptr<GameObject>> backgroundUpdateList;
-	// std::vector<std::shared_ptr<GameObject>> nonHittableUpdateList;
-	std::vector<std::shared_ptr<Entity>> hittableUpdateList;
-	// std::vector<std::shared_ptr<Projectile>> projectileUpdateList;
-	// std::vector<std::shared_ptr<GameObject>> foregroundUpdateList;
-
-	// std::vector<std::shared_ptr<GameObject>> updateList;
-	std::vector<const GameObject*> removalList;
-
-	Game();
-
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
-	void updateGame_RemovalLogic();
-	void updateEngine_Move() override;
-	void updateEngine_Collision() override;
-	void draw() const override;
-public:
-	inline static Game& getInstance()
-	{
-		static Game g;
-		return g;
-	}
-
-	void run();
-	void addHitUpdate(std::shared_ptr<Entity> item);
-	// void addProjectileUpdate(std::shared_ptr<Projectile> item);
-	void removeFromUpdates(const GameObject* item);
-
-	Entity* projectileHitDetection(PhysicsObject& projectileState);
-};

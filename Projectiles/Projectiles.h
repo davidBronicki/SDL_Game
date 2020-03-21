@@ -1,27 +1,31 @@
 #pragma once
 
-#include "Basic/MyGameObjects.h"
+#include "Basic/BasicGameObjects.h"
 
 class Projectile : public Entity
 {
 protected:
 	float damage;
 	size_t lifetime;
+	std::shared_ptr<CompositeEntity> parent;
 public:
 	Projectile(const ImageTexture& inWorldTexture,
 		const PhysicsObject& inState,
 		float inDamage,
 		size_t inLifetime);
+	
+	void take(const GameObject* newController);
 
 	float getDamage();
 
-	// void updateGame_ControlLogic() override;
+	virtual void realignPartialTick(
+		float timeOfImpact, float kineticReduction);
+	//used to resolve post-collision position
+	//and secondary collisions.
+	//very important for ship pass-through trajectories
+
 	void updateGame_GeneralLogic() override;
-	// void updateEngine_Move() override;
 
-	void updateEngine_Collision() override;
-
-	// virtual bool updateGame_Removal() = 0;
-
-	// void draw() const override;
+	void updateEngine_Collision(
+		std::shared_ptr<GameObject> self) override;
 };

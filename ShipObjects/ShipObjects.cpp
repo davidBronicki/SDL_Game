@@ -17,10 +17,10 @@ ShipComponent::ShipComponent(const ImageTexture& inTexture,
 	hp{(float)maxHP, maxHP}
 {}
 
-void ShipComponent::collide(Projectile& p)
+void ShipComponent::collide(shared_ptr<Projectile> p)
 {
-	hp.health -= p.getDamage();
-	game.removeFromUpdates((Entity*)(&p));
+	hp.health -= p->getDamage();
+	// game.removeFromUpdates((Entity*)(&p));
 }
 
 /////----------------ShipChassis----------------\\\\\
@@ -234,8 +234,32 @@ void Ship::fire(size_t weaponSlot)
 	}
 }
 
-void Ship::collide(Projectile& p)
+void Ship::collide(shared_ptr<Projectile> p)
 {
+
+	/*
+
+***I am temporarily forgoing the following.
+While the projectile is inside the ship, it will
+not be able to collide with anything in the environment.
+This can be changed if need be.
+
+Potential bug: I am aiming to make this able
+to collide with internal structures of the ship
+and simultaniously be able to collide with other objects
+just in case there are very nearby objects.
+
+It is possible for there to be a very nearby composite
+object (such as a ship) which will sieze control
+of the projectile upon calling of collide. This
+would take control away from this ship and therefor
+not allow impact with internal structures of this ship.
+
+	*/
+
+	game.removeFromUpdates((Entity*)(&p));
+	insideShots.push_back(p);
+
 	chassis->collide(p);
 	if (chassis->hp.health <= 0)
 		game.removeFromUpdates(this);
@@ -243,11 +267,29 @@ void Ship::collide(Projectile& p)
 
 void Ship::updateEngine_Move()
 {
-	Entity::updateEngine_Move();
 	if (inertialDampenerEngaged)
 	{
 		state.force -= state.state.vel * 0.2;
 		state.torque -= state.state.angularVel * 5.0;
+	}
+	Entity::updateEngine_Move();
+	for (auto&& projectile : insideShots)
+	{
+		projectile->updateEngine_Move();
+		Entity* hitObject(NULL);
+		// float earliestImpact = game.projectileHitDetection(
+		// 	*projectile, hitObject);
+		float earliestImpact = 2;
+		for (auto&& item : children)
+		{
+			float impactTime = projectileHitDetection(
+				*projectile, *item);
+			if (impactTime > 0 && impactTime < earliestImpact)
+			{
+				earliestImpact = impactTime;
+				hitObject = item.get();
+			}
+		}
 	}
 }
 

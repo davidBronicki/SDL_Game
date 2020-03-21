@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Basic/MyGameObjects.h"
+#include "Basic/BasicGameObjects.h"
 
 
 class Ship;
@@ -16,11 +16,7 @@ public:
 	ShipComponent(const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState);
 
-	void collide(Projectile& p) override;
-
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
-	// void updateEngine_Collision() override;
+	void collide(std::shared_ptr<Projectile> p) override;
 };
 
 enum class ComponentType
@@ -97,6 +93,9 @@ class Ship : public Entity
 	std::vector<std::shared_ptr<Engine>> engineBank;
 	std::vector<std::shared_ptr<Weapon>> weaponBank;
 	std::vector<std::shared_ptr<Shield>> shieldBank;//put this stuff on chassis?
+
+	std::vector<std::shared_ptr<Projectile>> insideShots;
+
 public:
 	Ship(const GamePosition& inPos);
 
@@ -128,13 +127,9 @@ public:
 
 	/////parrent class functions\\\\\
 
-	void collide(Projectile& p) override;
-
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
+	void collide(std::shared_ptr<Projectile> p) override;
 
 	void updateEngine_Move() override;
-	// void updateEngine_Collision() override;
 
 	void draw() const override;
 };
