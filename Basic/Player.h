@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Basic/Interfaces.h"
+
 class Ship;
 
-class Player : public GameObject
+class Player:
+	public I_CoreUpdate,
+	public I_Draw
 {
 	std::shared_ptr<Ship> ship;
 
@@ -17,12 +21,12 @@ public:
 
 	void newShip(std::shared_ptr<Ship> newShip);
 
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
+	void updateControl() override;
+	void updateLogic() override;
 
-	void updateEngine_Move() override;
+	void updateMovement() override;
 	// void updateEngine_Collision(
 	// 	std::shared_ptr<GameObject> self) override;
 
-	void draw() const override;
+	void draw() override;
 };

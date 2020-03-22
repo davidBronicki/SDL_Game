@@ -1,6 +1,6 @@
 #include "ShipObjects/ShipObjects.h"
-#include "Items/ItemObjects.h"
-#include "Projectiles/Projectiles.h"
+// #include "Items/ItemObjects.h"
+// #include "Projectiles/Projectiles.h"
 
 #include "math.h"
 
@@ -10,27 +10,38 @@ using namespace std;
 
 /////----------------ShipComponent-----------------\\\\\
 
-ShipComponent::ShipComponent(const ImageTexture& inTexture,
+ShipComponent::ShipComponent(
+	weak_ptr<I_Composite> parent,
+	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState)
 :
-	Entity(inTexture, inState),
+	I_Hittable(parent),
+	Pure_Draw(inTexture),
+	Pure_WorldPhysics(inState),
 	hp{(float)maxHP, maxHP}
 {}
 
-void ShipComponent::collide(shared_ptr<Projectile> p)
+void ShipComponent::hit(Projectile& hit)
 {
-	hp.health -= p->getDamage();
+	hp.health -= 10;
+	// hp.health -= p->getDamage();
 	// game.removeFromUpdates((Entity*)(&p));
+}
+
+void ShipComponent::draw()
+{
+	worldTexture.draw(cam.stateToParameters(state));
 }
 
 /////----------------ShipChassis----------------\\\\\
 
 ShipChassis::ShipChassis(
+	weak_ptr<I_Composite> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	const std::vector<size_t>& inComponentSlots)
 :
-	ShipComponent(inTexture,
+	ShipComponent(parent, inTexture,
 		maxHP, inState),
 	componentSlots(inComponentSlots)
 {}
@@ -50,32 +61,38 @@ size_t ShipChassis::shieldCount()
 
 /////---------------------Hull----------------------\\\\\
 
-Hull::Hull(const ImageTexture& inTexture,
+Hull::Hull(
+	weak_ptr<I_Composite> parent,
+	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState)
 :
-	ShipComponent(inTexture,
+	ShipComponent(parent, inTexture,
 		maxHP, inState)
 {}
 
 /////------------------Engine-------------------\\\\\
 
-Engine::Engine(const ImageTexture& inTexture,
+Engine::Engine(
+	weak_ptr<I_Composite> parent,
+	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	float inThrust)
 :
-	ShipComponent(inTexture,
+	ShipComponent(parent, inTexture,
 		maxHP, inState),
 	thrust(inThrust)
 {}
 
 /////------------------Weapon-------------------\\\\\
 
-Weapon::Weapon(const ImageTexture& inTexture,
+Weapon::Weapon(
+	weak_ptr<I_Composite> parent,
+	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	int inBaseDamage,
 	shared_ptr<Ammunition> inAmmo)
 :
-	ShipComponent(inTexture,
+	ShipComponent(parent, inTexture,
 		maxHP, inState),
 	baseDamage(inBaseDamage),
 	ammo(inAmmo)
@@ -88,16 +105,18 @@ void Weapon::pointTo(float angle)
 
 void Weapon::fire()
 {
-	ammo->fire(state.state, baseDamage);
+	// ammo->fire(state.state, baseDamage);
 }
 
 /////------------------Shield-------------------\\\\\
 
-Shield::Shield(const ImageTexture& inTexture,
+Shield::Shield(
+	weak_ptr<I_Composite> parent,
+	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	int maxSP, float inShieldDamageReduction)
 :
-	ShipComponent(inTexture,
+	ShipComponent(parent, inTexture,
 		maxHP, inState),
 	sp{(float)maxSP, maxSP},
 	shieldDamageReduction(inShieldDamageReduction)
@@ -105,20 +124,22 @@ Shield::Shield(const ImageTexture& inTexture,
 
 /////--------------------Ship-------------------\\\\\
 
-Ship::Ship(const GamePosition& inPos)
+Ship::Ship(
+	weak_ptr<I_Composite> parent,
+	const GamePosition& inPos)
 :
-	Entity(NULL_TEXTURE,
-		PhysicsObject(Kinematic(inPos), 0, 0, 1)),
+	I_Hittable(parent),
+	Pure_WorldPhysics(inPos, 1, 1, 1),
 	inertialDampenerEngaged(true)
 {}
 
 void Ship::setChassis(shared_ptr<ShipChassis> newChassis)
 {
 	chassis = newChassis;
-	children.push_back(chassis);
-	state.mass = chassis->state.mass;
-	state.momentInertia = chassis->state.momentInertia;
-	state.radius = chassis->state.radius;
+	components.push_back(chassis);
+	state.mass = chassis->getState().mass;
+	state.momentInertia = chassis->getState().momentInertia;
+	state.radius = chassis->getState().radius;
 	engineBank.resize(chassis->engineCount());
 	weaponBank.resize(chassis->weaponCount());
 	shieldBank.resize(chassis->shieldCount());
@@ -134,7 +155,7 @@ void Ship::setShield(shared_ptr<Shield> newShield, size_t slot)
 	if (slot <= shieldBank.size())
 	{
 		shieldBank[slot] = newShield;
-		children.push_back(newShield);
+		components.push_back(newShield);
 	}
 	else
 	{
@@ -147,8 +168,8 @@ void Ship::setWeapon(shared_ptr<Weapon> newWeapon, size_t slot)
 	if (slot <= weaponBank.size())
 	{
 		weaponBank[slot] = newWeapon;
-		newWeapon->noAngleFlag = true;
-		children.push_back(newWeapon);
+		// newWeapon->noAngleFlag = true;
+		components.push_back(newWeapon);
 	}
 	else
 	{
@@ -161,7 +182,7 @@ void Ship::setEngine(shared_ptr<Engine> newEngine, size_t slot)
 	if (slot <= engineBank.size())
 	{
 		engineBank[slot] = newEngine;
-		children.push_back(newEngine);
+		components.push_back(newEngine);
 	}
 	else
 	{
@@ -211,7 +232,7 @@ void Ship::rotate(float magnitude)
 void Ship::pointAtAngle(float angle)
 {
 	float relativeAngleToCurser =
-		angle - getPhysics().state.angle;
+		angle - state.state.angle;
 	if (relativeAngleToCurser < M_PI) relativeAngleToCurser += 2 * M_PI;
 	if (relativeAngleToCurser > M_PI) relativeAngleToCurser -= 2 * M_PI;
 	rotate(relativeAngleToCurser);
@@ -234,7 +255,7 @@ void Ship::fire(size_t weaponSlot)
 	}
 }
 
-void Ship::collide(shared_ptr<Projectile> p)
+void Ship::hit(Projectile& hit)
 {
 
 	/*
@@ -257,43 +278,58 @@ not allow impact with internal structures of this ship.
 
 	*/
 
-	game.removeFromUpdates((Entity*)(&p));
-	insideShots.push_back(p);
+	// game.removeFromUpdates((Entity*)(&hit));
+	// insideShots.push_back(p);
 
-	chassis->collide(p);
+	chassis->hit(hit);
 	if (chassis->hp.health <= 0)
-		game.removeFromUpdates(this);
+		parent.lock()->remove(this);
 }
 
-void Ship::updateEngine_Move()
+void Ship::updateMovement()
 {
 	if (inertialDampenerEngaged)
 	{
 		state.force -= state.state.vel * 0.2;
 		state.torque -= state.state.angularVel * 5.0;
 	}
-	Entity::updateEngine_Move();
-	for (auto&& projectile : insideShots)
-	{
-		projectile->updateEngine_Move();
-		Entity* hitObject(NULL);
-		// float earliestImpact = game.projectileHitDetection(
-		// 	*projectile, hitObject);
-		float earliestImpact = 2;
-		for (auto&& item : children)
-		{
-			float impactTime = projectileHitDetection(
-				*projectile, *item);
-			if (impactTime > 0 && impactTime < earliestImpact)
-			{
-				earliestImpact = impactTime;
-				hitObject = item.get();
-			}
-		}
-	}
+	Pure_WorldPhysics::update(
+		GameUpdateEnvironment::getDT());
+	chassis->setState(state);
+
+	// for (auto&& item : components)
+	// {
+	// 	item->updateMovement();
+	// }
+
+	// for ()
+
+	// for (auto&& projectile : insideShots)
+	// {
+	// 	projectile->updateMovement();
+	// 	Entity* hitObject(NULL);
+	// 	// float earliestImpact = game.projectileHitDetection(
+	// 	// 	*projectile, hitObject);
+	// 	float earliestImpact = 2;
+	// 	for (auto&& item : children)
+	// 	{
+	// 		float impactTime = projectileHitDetection(
+	// 			*projectile, *item);
+	// 		if (impactTime > 0 && impactTime < earliestImpact)
+	// 		{
+	// 			earliestImpact = impactTime;
+	// 			hitObject = item.get();
+	// 		}
+	// 	}
+	// }
 }
 
-void Ship::draw() const
+void Ship::updateCollisions()
+{
+
+}
+
+void Ship::draw()
 {
 	chassis->draw();
 	weaponBank[0]->draw();

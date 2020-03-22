@@ -1,4 +1,9 @@
 #include "Basic/Player.h"
+#include "ShipObjects/ShipObjects.h"
+
+#include <iostream>
+
+using namespace std;
 
 Player::Player()
 {
@@ -18,6 +23,7 @@ Player::Player()
 				}
 			}
 		}));
+
 	// Keyboard::subscribeToKeyPressed(
 	// 	function<void(Key)>([this](Key key) -> void
 	// 	{
@@ -40,7 +46,7 @@ void Player::newShip(shared_ptr<Ship> newShip)
 	ship = newShip;
 }
 
-void Player::updateGame_ControlLogic()
+void Player::updateControl()
 {
 	switch(controls)
 	{
@@ -77,28 +83,27 @@ void Player::updateGame_ControlLogic()
 	{
 		ship->inertialBrake();
 	}
-	ship->updateGame_ControlLogic();
+	// ship->updateControl();
 }
 
-void Player::updateGame_GeneralLogic()
+void Player::updateLogic()
 {
 	cam.setPosition(this, ship->getKinetics().pos);
 
-	ship->updateGame_GeneralLogic();
+	// ship->updateLogic();
 }
 
-void Player::updateEngine_Move()
+void Player::updateMovement()
 {
-	ship->updateEngine_Move();
+	// ship->updateMovement();
 }
 
-void Player::updateEngine_Collision(
-	shared_ptr<GameObject> self)
-{
-	ship->updateEngine_Collision(ship);
-}
+// void Player::updateEngine_Collision()
+// {
+// 	// ship->updateEngine_Collision(ship);
+// }
 
-void Player::draw() const
+void Player::draw()
 {
-	ship->draw();
+	// ship->draw();
 }

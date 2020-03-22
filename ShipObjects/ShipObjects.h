@@ -1,22 +1,27 @@
 #pragma once
 
-#include "Basic/BasicGameObjects.h"
+#include "Basic/MyGameObjects.h"
 
 
 class Ship;
 
-class ShipComponent : public Entity
+class ShipComponent:
+	public I_Hittable,
+	public Pure_WorldPhysics,
+	public Pure_Draw
 {
 protected:
 	LifePointCounter hp;
 
 	friend Ship;
-	void setPosition(const GamePosition& shipPosition);
 public:
-	ShipComponent(const ImageTexture& inTexture,
+	ShipComponent(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState);
 
-	void collide(std::shared_ptr<Projectile> p) override;
+	void hit(Projectile& hit) override;
+
+	void draw() override;
 };
 
 enum class ComponentType
@@ -31,7 +36,8 @@ class ShipChassis : public ShipComponent
 {
 	std::vector<size_t> componentSlots;//[(int)(ComponentType::COMPONENT_TYPE_COUNT)];
 public:
-	ShipChassis(const ImageTexture& inTexture,
+	ShipChassis(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState,
 		const std::vector<size_t>& inComponentSlots);
 
@@ -43,7 +49,8 @@ public:
 class Hull : public ShipComponent
 {
 public:
-	Hull(const ImageTexture& inTexture,
+	Hull(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState);
 };
 
@@ -52,7 +59,8 @@ class Engine : public ShipComponent
 protected:
 	float thrust;
 public:
-	Engine(const ImageTexture& inTexture,
+	Engine(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState,
 		float inThrust);
 };
@@ -65,7 +73,8 @@ protected:
 	int baseDamage;
 	std::shared_ptr<Ammunition> ammo;
 public:
-	Weapon(const ImageTexture& inTexture,
+	Weapon(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState,
 		int inBaseDamage,
 		std::shared_ptr<Ammunition> inAmmo);
@@ -79,14 +88,20 @@ protected:
 	float shieldDamageReduction;
 	LifePointCounter sp;
 public:
-	Shield(const ImageTexture& inTexture,
+	Shield(std::weak_ptr<I_Composite> parent,
+		const ImageTexture& inTexture,
 		int maxHP, const PhysicsObject& inState,
 		int maxSP, float inShieldDamageReduction);
 };
 
-class Ship : public Entity
+class Ship:
+	public I_Hittable,
+	public Pure_WorldPhysics,
+	public I_Composite
 {
 	bool inertialDampenerEngaged;
+
+	std::vector<std::shared_ptr<ShipComponent>> components;
 
 	std::shared_ptr<ShipChassis> chassis;
 	std::shared_ptr<Hull> hull;
@@ -97,7 +112,9 @@ class Ship : public Entity
 	std::vector<std::shared_ptr<Projectile>> insideShots;
 
 public:
-	Ship(const GamePosition& inPos);
+	Ship(
+	std::weak_ptr<I_Composite> parent,
+	const GamePosition& inPos);
 
 	/////changing ship components\\\\\
 
@@ -127,9 +144,11 @@ public:
 
 	/////parrent class functions\\\\\
 
-	void collide(std::shared_ptr<Projectile> p) override;
+	void hit(Projectile& hit) override;
 
-	void updateEngine_Move() override;
+	void updateMovement() override;
 
-	void draw() const override;
+	void updateCollisions() override;
+
+	void draw() override;
 };

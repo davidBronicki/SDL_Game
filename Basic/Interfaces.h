@@ -23,47 +23,50 @@ enum class Control
 class I_CoreUpdate
 {
 public:
-	void updateMovement() virtual{}
-	void updateControl() virtual{}
-	void updateLogic() virtual{}
+	virtual void updateMovement(){}
+	virtual void updateControl(){}
+	virtual void updateLogic(){}
 };
 
 class I_Draw
 {
 public:
-	void draw() virtual{};
+	virtual void draw(){};
 };
 
 class I_WorldPosition
 {
 public:
-	GamePosition const& pos() const virtual = 0;
-	void setPos(GamePosition const& newPos) virtual = 0;
+	virtual GamePosition const& pos() const = 0;
+	virtual void setPos(GamePosition const& newPos) = 0;
 };
 class I_WorldKinetic:
 	public virtual I_WorldPosition
 {
 public:
-	Vector const& vel() const virtual = 0;
-	float const& angularVel() const virtual = 0;
+	virtual Vector const& vel() const = 0;
+	virtual void setVel(Vector const& newVel) = 0;
+	virtual float const& angularVel() const = 0;
 
-	Kinetic const& getKinetics() const virtual = 0;
-	void setKinetics(Kinetic const& newState) virtual = 0;
+	virtual Kinematic const& getKinetics() const = 0;
+	virtual void setKinetics(Kinematic const& newState) = 0;
 
-	void update(float dt) virtual = 0;
+	virtual void update(float dt) = 0;
 };
 class I_WorldPhysics : public virtual I_WorldKinetic
 {
 public:
-	void applyForce(Vector const& force) virtual = 0;
-	void applyTorque(float torque) virtual = 0;
+	virtual void applyForce(Vector const& force) = 0;
+	virtual void applyTorque(float torque) = 0;
 
-	PhysicsObject getState() const virtual = 0;
-	void setState(PhysicsObject const& newState) virtual = 0;
+	virtual PhysicsObject const& getState() const = 0;
+	virtual void setState(PhysicsObject const& newState) = 0;
 };
 
 class I_Collidable
 {
+protected:
+
 	friend float getCollisionTime(
 		const I_Collidable&, const I_Collidable&);
 	friend float getExitTime(
@@ -71,6 +74,12 @@ class I_Collidable
 
 	HitBox currentHitBox;
 	HitBox previousHitBox;
+public:
+	I_Collidable(){}
+	I_Collidable(HitBox current):
+		currentHitBox(current),
+		previousHitBox(current)
+	{}
 };
 
 class I_FullObject :
@@ -80,39 +89,47 @@ class I_FullObject :
 	public virtual I_WorldKinetic
 {};
 
+class I_Child;
+
 class I_Composite
 {
 public:
-	void updateCollisions() virtual = 0;
+	virtual void updateCollisions() = 0;
+	virtual void updateRemoval() = 0;
+	virtual void remove(I_Child* entity) = 0;
 };
 
 class I_Child : public virtual I_FullObject
 {
+protected:
 	std::weak_ptr<I_Composite> parent;
+public:
+	I_Child(std::weak_ptr<I_Composite> inParent):
+		parent(inParent){}
 };
 
 class I_Controllable
 {
 public:
-	void toggleControl(Control key) virtual = 0;
-	void simpleControl(Control key, float controlValue) virtual = 0;
-	void advancedControl(Control key,
-		std::vector<float> const& controlValues) virtual = 0;
+	virtual void toggleControl(Control key) = 0;
+	virtual void simpleControl(Control key, float controlValue) = 0;
+	virtual void advancedControl(Control key,
+		std::vector<float> const& controlValues) = 0;
 };
 
 class I_WorldSpace:
 	public virtual I_CoreUpdate,
 	public virtual I_Composite,
 	public virtual I_Draw
-{
-};
+{};
 
 class I_ChildSpace;
 
 class I_ParentSpace:
 	public virtual I_WorldSpace
 {
-	std::vector<std::shared_ptr<I_ChildSpace>> childSpaces
+protected:
+	std::vector<std::shared_ptr<I_ChildSpace>> childSpaces;
 public:
 	void updateMovement() override;
 	void updateControl() override;
@@ -121,12 +138,12 @@ public:
 	void updateCollisions() override;
 
 	void draw() override;
-}
+};
 
 class I_ChildSpace:
 	public virtual I_WorldSpace
 {
-	std::weak_ptr<WorldSpace> parentSpace;
+	std::weak_ptr<I_WorldSpace> parentSpace;
 };
 
 /////------------external interface functions-----------\\\\\
@@ -152,6 +169,7 @@ inline float getExitTime(
 class Pure_Draw:
 	public virtual I_Draw
 {
+protected:
 	ImageTexture worldTexture;
 public:
 	Pure_Draw(ImageTexture const& inTexture)
@@ -161,37 +179,44 @@ public:
 class Pure_WorldPosition:
 	public virtual I_WorldPosition
 {
-	GamePosition pos;
+protected:
+	GamePosition posistion;
 public:
 	Pure_WorldPosition(){}
 	Pure_WorldPosition(GamePosition const& init)
-	: pos(init){}
+	: posistion(init){}
 
 	GamePosition const& pos() const override
 	{
-		return pos;
+		return posistion;
 	}
 	void setPos(GamePosition const& newPos) override
 	{
-		pos = newPos;
+		posistion = newPos;
 	}
 };
 
 class Pure_WorldKinetic:
 	public virtual I_WorldKinetic
 {
-	Kinetic state;
+protected:
+	Kinematic state;
 public:
 	Pure_WorldKinetic(){}
 	Pure_WorldKinetic(GamePosition const& initPos)
 	: state(initPos){}
-	Pure_WorldKinetic(Kinetic const& initState)
+	Pure_WorldKinetic(Kinematic const& initState)
 	: state(initState){}
 
 	Vector const& vel() const override
 	{
 		return state.vel;
 	}
+	void setVel(Vector const& newVel) override
+	{
+		state.vel = newVel;
+	}
+
 	float const& angularVel() const override
 	{
 		return state.angularVel;
@@ -206,11 +231,11 @@ public:
 		state.pos = newPos;
 	}
 
-	Kinetic const& getKinetics() const override
+	Kinematic const& getKinetics() const override
 	{
 		return state;
 	}
-	void setKinetics(Kinetic const& newState) override
+	void setKinetics(Kinematic const& newState) override
 	{
 		state = newState;
 	}
@@ -224,16 +249,17 @@ public:
 class Pure_WorldPhysics:
 	public virtual I_WorldPhysics
 {
+protected:
 	PhysicsObject state;
 public:
 	Pure_WorldPhysics(
 		float inRadius, float inMass, float inMoment)
-	: state(Kinetic(), radius(inRadius), mass(inMass),
-		momentInertia(inMoment)){}
+	: state(Kinematic(),
+		inRadius, inMass, inMoment){}
 	Pure_WorldPhysics(GamePosition const& initPos,
 		float inRadius, float inMass, float inMoment)
-	: state(Kinetic(initPos), radius(inRadius),
-		mass(inMass), momentInertia(inMoment)){}
+	: state(Kinematic(initPos),
+		inRadius, inMass, inMoment){}
 	Pure_WorldPhysics(PhysicsObject const& initState)
 	: state(initState){}
 
@@ -258,7 +284,7 @@ public:
 	{
 		return state.state.angularVel;
 	}
-	Kinetic const& getKinetics() const override
+	Kinematic const& getKinetics() const override
 	{
 		return state.state;
 	}
@@ -271,7 +297,11 @@ public:
 	{
 		state.state.pos = newPos;
 	}
-	void setKinetics(Kinetic const& newState) override
+	void setVel(Vector const& newVel) override
+	{
+		state.state.vel = newVel;
+	}
+	void setKinetics(Kinematic const& newState) override
 	{
 		state.state = newState;
 	}

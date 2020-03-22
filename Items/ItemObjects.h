@@ -2,20 +2,21 @@
 
 #include "Basic/MyGameObjects.h"
 
-class Item : public GameObject
+class Item:
+	public I_CoreUpdate,
+	public Pure_Draw
 {
 protected:
 	unsigned int count;
-	const ImageTexture& itemTexture;
 public:
 	Item(unsigned int initialCount,
 		const ImageTexture& inTexture);
 
-	void updateGame_ControlLogic() override;
-	void updateGame_GeneralLogic() override;
-	void updateEngine_Move() override;
+	// void updateGame_ControlLogic() override;
+	// void updateGame_GeneralLogic() override;
+	// void updateEngine_Move() override;
 
-	void draw() const override;
+	void draw() override;
 };
 
 class Ammunition : public Item
@@ -29,5 +30,7 @@ public:
 		const ImageTexture& inProjectileTexture,
 		float inDamageModifier);
 
-	void fire(const Kinematic& weaponState, int baseDamage);
+	std::shared_ptr<Projectile> use(
+		std::shared_ptr<I_Composite> parent,
+		const Kinematic& weaponState, int baseDamage);
 };
