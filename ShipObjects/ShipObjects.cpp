@@ -105,7 +105,7 @@ void Weapon::pointTo(float angle)
 
 void Weapon::fire()
 {
-	// ammo->fire(state.state, baseDamage);
+	// ammo->use( state.state, baseDamage);
 }
 
 /////------------------Shield-------------------\\\\\
@@ -124,9 +124,16 @@ Shield::Shield(
 
 /////--------------------Ship-------------------\\\\\
 
+Vector Ship::velocityFromStationary() const
+{
+	return state.state.vel +
+		dynamic_pointer_cast<PlaySpace>(parent.lock())
+		->getStationaryVelocity();
+}
+
 Ship::Ship(
 	weak_ptr<I_Composite> parent,
-	const GamePosition& inPos)
+	const Vector& inPos)
 :
 	I_Hittable(parent),
 	Pure_WorldPhysics(inPos, 1, 1, 1),
@@ -212,7 +219,7 @@ void Ship::accelLeft()
 
 void Ship::inertialBrake()
 {
-	state.force -= state.state.vel * 2.0;
+	state.force -= velocityFromStationary() * 2.0;
 }
 
 void Ship::rotateLeft()
@@ -283,7 +290,8 @@ not allow impact with internal structures of this ship.
 
 	chassis->hit(hit);
 	if (chassis->hp.health <= 0)
-		parent.lock()->remove(this);
+		dynamic_pointer_cast<PlaySpace>
+			(parent.lock())->remove(this);
 }
 
 void Ship::updateMovement()
@@ -328,6 +336,9 @@ void Ship::updateCollisions()
 {
 
 }
+
+void Ship::updateRemoval()
+{}
 
 void Ship::draw()
 {

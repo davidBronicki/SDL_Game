@@ -111,10 +111,12 @@ class Ship:
 
 	std::vector<std::shared_ptr<Projectile>> insideShots;
 
+	Vector velocityFromStationary() const;
+
 public:
 	Ship(
 	std::weak_ptr<I_Composite> parent,
-	const GamePosition& inPos);
+	const Vector& inPos);
 
 	/////changing ship components\\\\\
 
@@ -149,6 +151,7 @@ public:
 	void updateMovement() override;
 
 	void updateCollisions() override;
+	void updateRemoval() override;
 
 	void draw() override;
 };

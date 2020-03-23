@@ -46,35 +46,50 @@ public:
 	virtual void hit(Projectile& hit) = 0;
 };
 
+class ParticleField;
+
 class PlaySpace:
 	public I_ChildSpace
 {
 protected:
 	std::vector<std::shared_ptr<I_Hittable>> childEntities;
 	std::vector<std::shared_ptr<Projectile>> projectiles;
+
+	std::vector<I_Child*> removalList;
+
 	std::shared_ptr<I_WorldKinetic> centerPoint;
+	Vector stationaryVelocity;
+
+	std::shared_ptr<ParticleField> particleField;
 public:
+	PlaySpace(std::shared_ptr<I_ParentSpace> inParent);
+
 	void setCenter(
 		std::shared_ptr<I_WorldKinetic> newCenter);
 
+	Vector const& getStationaryVelocity() const;
+
+	// void addEntity(std::shared_ptr<I_Hittable> entity);
+	
+	void updateMovement() final;
+	void updateControl() final;
+	void updateLogic() final;
+
+	void updateCollisions() final;
+	void updateRemoval() final;
+	void remove(I_Child* entity);
 	void addEntity(std::shared_ptr<I_Hittable> entity);
 	void addProjectile(
 		std::shared_ptr<Projectile> projectile);
 
-	void updateMovement() override;
-	void updateControl() override;
-	void updateLogic() override;
-
-	void updateCollisions() override;
-
-	void draw() override;
+	void draw() final;
 };
 
 #define cam Camera::getInstance()
 
 class Camera
 {
-	GamePosition pos;
+	Vector pos;
 	float zoom;
 	std::vector<const I_CoreUpdate*> controlStack;
 	Camera();
@@ -85,7 +100,7 @@ public:
 		return camera;
 	}
 	void take(const I_CoreUpdate* newController);
-	bool setPosition(const I_CoreUpdate* requester, const GamePosition& newPos);
+	bool setPosition(const I_CoreUpdate* requester, const Vector& newPos);
 	bool setZoom(const I_CoreUpdate* requester, float newZoom);
 	void release(const I_CoreUpdate* controller);
 
@@ -93,9 +108,9 @@ public:
 	DrawParameters stateToParameters(const PhysicsObject& state, float z) const;
 	Vector drawSpace() const;//get width and height drawn on screen (at player z level)
 	Vector drawSpace(float z) const;
-	GamePosition pixelLocation(int x, int y) const;//get the in world location of a point on screen
-	GamePosition mouseLocation() const;//get in world position of mouse (at player z level)
-	inline GamePosition getPos() const//get camera postion
+	Vector pixelLocation(int x, int y) const;//get the in world location of a point on screen
+	Vector mouseLocation() const;//get in world position of mouse (at player z level)
+	inline Vector getPos() const//get camera postion
 	{
 		return pos;
 	}
@@ -121,6 +136,7 @@ public:
 		return *g;
 	}
 	static void makeInstance();
+	void initialize();
 	void run();
 
 	void updateControl() override;

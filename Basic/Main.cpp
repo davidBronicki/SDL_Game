@@ -19,6 +19,7 @@ int main(int argc, char* args[])
 	GameControlEnvironment::init();
 
 	Game::makeInstance();
+	game.initialize();
 	game.run();
 
 	GameControlEnvironment::shutdown();

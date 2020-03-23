@@ -24,21 +24,21 @@ Player::Player()
 			}
 		}));
 
-	// Keyboard::subscribeToKeyPressed(
-	// 	function<void(Key)>([this](Key key) -> void
-	// 	{
-	// 		if (key == Key::Left_Alt)
-	// 		{
-	// 			if (controls == controlScheme::PointToRotate)
-	// 			{
-	// 				controls = controlScheme::ButtonRotate;
-	// 			}
-	// 			else
-	// 			{
-	// 				controls = controlScheme::PointToRotate;
-	// 			}
-	// 		}
-	// 	}));
+	Keyboard::subscribeToKeyPressed(
+		function<void(Key)>([this](Key key) -> void
+		{
+			if (key == Key::Left_Alt)
+			{
+				if (controls == controlScheme::PointToRotate)
+				{
+					controls = controlScheme::ButtonRotate;
+				}
+				else
+				{
+					controls = controlScheme::PointToRotate;
+				}
+			}
+		}));
 }
 
 void Player::newShip(shared_ptr<Ship> newShip)
@@ -54,7 +54,7 @@ void Player::updateControl()
 		{
 			ship->pointAtAngle(ship->getKinetics().angle);
 
-			GamePosition shipPos = ship->getKinetics().pos;
+			Vector shipPos = ship->getKinetics().pos;
 			auto cursorPos = Camera::getInstance().mouseLocation();
 			auto relativePos = cursorPos - shipPos;
 			ship->pointAtAngle(atan2(relativePos.y, relativePos.x));

@@ -2,6 +2,8 @@
 
 #include "Basic/Player.h"
 
+#include "Basic/AdditionalObjects.h"
+
 using namespace std;
 
 /////---------------I_ParentSpace-------------\\\\\
@@ -34,6 +36,39 @@ void I_ParentSpace::updateCollisions()
 	{
 		i->updateCollisions();
 	}
+}
+
+void I_ParentSpace::updateRemoval()
+{
+	for (auto&& removalItem : removalList)
+	{
+		for (auto it = childSpaces.begin();
+			it < childSpaces.end(); ++it)
+		// for (int i = 0; i < childSpaces.size(); ++i)
+		{
+			if (it->get() == removalItem)
+			{
+				childSpaces.erase(it);
+				break;
+			}
+		}
+	}
+	removalList.clear();
+	for (auto&& item : childSpaces)
+	{
+		item->updateRemoval();
+	}
+}
+
+void I_ParentSpace::removeSpace(I_ChildSpace* space)
+{
+	removalList.push_back(space);
+}
+
+void I_ParentSpace::addSpace(
+	shared_ptr<I_ChildSpace> space)
+{
+	childSpaces.push_back(space);
 }
 
 void I_ParentSpace::draw()
@@ -76,29 +111,40 @@ void Projectile::draw()
 
 /////------------------PlaySpace------------------\\\\\
 
+PlaySpace::PlaySpace(shared_ptr<I_ParentSpace> inParent)
+:
+	I_ChildSpace(inParent)
+{
+	particleField = make_shared<ParticleField>(
+		50,//count
+		1.3f,//max speed
+		1,//max rotation
+		1e5,//min z
+		5e5,//max z
+		0.2,//min size
+		0.5);//max size
+}
+
 void PlaySpace::setCenter(
 	std::shared_ptr<I_WorldKinetic> newCenter)
 {
 	centerPoint = newCenter;
+	stationaryVelocity = centerPoint->vel();
+	particleField->setCenter(newCenter);
 }
 
-void PlaySpace::addEntity(
-	std::shared_ptr<I_Hittable> entity)
+Vector const& PlaySpace::getStationaryVelocity() const
 {
-	childEntities.push_back(entity);
+	return stationaryVelocity;
 }
 
-void PlaySpace::addProjectile(
-	std::shared_ptr<Projectile> projectile)
-{
-	projectiles.push_back(projectile);
-}
-#include <iostream>
 void PlaySpace::updateMovement()
 {
+	stationaryVelocity += centerPoint->vel();
+	particleField->updateMovement();
 	for (auto&& item : childEntities)
 	{
-		item->setPos(GamePosition(
+		item->setPos(Vector(
 			item->pos().x - centerPoint->pos().x,
 			item->pos().y - centerPoint->pos().y));
 		item->setVel(
@@ -107,7 +153,7 @@ void PlaySpace::updateMovement()
 	}
 	for (auto&& item : projectiles)
 	{
-		item->setPos(GamePosition(
+		item->setPos(Vector(
 			item->pos().x - centerPoint->pos().x,
 			item->pos().y - centerPoint->pos().y));
 		item->setVel(
@@ -158,8 +204,55 @@ void PlaySpace::updateCollisions()
 	}
 }
 
+void PlaySpace::updateRemoval()
+{
+	for (auto&& removalItem : removalList)
+	{
+		bool found = false;
+		for (auto it = childEntities.begin();
+			it < childEntities.end(); ++it)
+		{
+			if (it->get() == removalItem)
+			{
+				childEntities.erase(it);
+				found = true;
+				break;
+			}
+		}
+		if (found)
+			continue;
+		for (auto it = projectiles.begin();
+			it < projectiles.end(); ++it)
+		{
+			if (it->get() == removalItem)
+			{
+				projectiles.erase(it);
+				break;
+			}
+		}
+	}
+	removalList.clear();
+}
+
+void PlaySpace::remove(I_Child* entity)
+{
+	removalList.push_back(entity);
+}
+
+void PlaySpace::addEntity(shared_ptr<I_Hittable> entity)
+{
+	childEntities.push_back(entity);
+}
+
+void PlaySpace::addProjectile(
+	std::shared_ptr<Projectile> projectile)
+{
+	projectiles.push_back(projectile);
+}
+
 void PlaySpace::draw()
 {
+	particleField->draw();
 	for (auto&& item : childEntities)
 	{
 		item->draw();
@@ -190,7 +283,7 @@ void Camera::take(const I_CoreUpdate* newController)
 	controlStack.push_back(newController);
 }
 
-bool Camera::setPosition(const I_CoreUpdate* requester, const GamePosition& newPos)
+bool Camera::setPosition(const I_CoreUpdate* requester, const Vector& newPos)
 {
 	if (controlStack.size() == 0) return false;
 	if (requester == controlStack.back())
@@ -275,15 +368,15 @@ Vector Camera::drawSpace(float z) const
 	return drawSpace() * (distToCam / camDist);
 }
 
-GamePosition Camera::pixelLocation(int x, int y) const
+Vector Camera::pixelLocation(int x, int y) const
 {
 	float worldX = pos.x + (x - GameDrawEnvironment::getWidth() / 2) / (zoom * GameDrawEnvironment::getHeight());
 	float worldY = pos.y - (y - GameDrawEnvironment::getHeight() / 2) / (zoom * GameDrawEnvironment::getHeight());
-	return GamePosition(worldX, worldY);
+	return Vector(worldX, worldY);
 }
 
 
-GamePosition Camera::mouseLocation() const
+Vector Camera::mouseLocation() const
 {
 	return pixelLocation(Mouse::x(), Mouse::y());
 }

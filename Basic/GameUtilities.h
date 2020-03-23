@@ -24,8 +24,6 @@ public:
 	}
 };
 
-struct GamePosition;
-
 struct Vector
 {
 	float x;
@@ -49,40 +47,18 @@ Vector operator*(Vector left, float right);
 Vector operator*(float left, Vector right);
 Vector operator/(Vector left, float right);
 
-struct GamePosition
-{
-	float x;
-	float y;
-
-	GamePosition();
-	GamePosition(float inX, float inY);
-	GamePosition(const Vector& input);
-	float distance(const GamePosition& otherPoint) const;
-	float distanceSqr(const GamePosition& otherPoint) const;
-
-	GamePosition& operator+=(const Vector& displacement);
-	GamePosition& operator-=(const Vector& displacement);
-	friend Vector operator-(const GamePosition& left, const GamePosition& right);
-};
-
-GamePosition operator+(GamePosition left, const Vector& right);
-GamePosition operator-(GamePosition left, const Vector& right);
-GamePosition operator+(const Vector& left, GamePosition right);
-Vector operator-(const GamePosition& left, const GamePosition& right);
-
 struct Kinematic
 {
-	GamePosition pos;
-	Vector vel, acc;
+	Vector pos, vel, acc;
 	float angle, angularVel, angularAcc;
 
 	Kinematic();
-	Kinematic(const GamePosition& inPos);
-	Kinematic(const GamePosition& inPos,
+	Kinematic(const Vector& inPos);
+	Kinematic(const Vector& inPos,
 		const Vector& inVel);
-	Kinematic(const GamePosition& inPos,
+	Kinematic(const Vector& inPos,
 		float inAngle);
-	Kinematic(const GamePosition& inPos,
+	Kinematic(const Vector& inPos,
 		const Vector& inVel,
 		float inAngle, float inAngularVel);
 
@@ -91,7 +67,12 @@ struct Kinematic
 		update(GameUpdateEnvironment::getDT());
 	}
 	void update(float dt);
+
+	Kinematic& operator+=(const Kinematic& other);
+	Kinematic& operator-=(const Kinematic& other);
 };
+Kinematic operator+(Kinematic left, const Kinematic& right);
+Kinematic operator-(Kinematic left, const Kinematic& right);
 
 struct LifePointCounter
 {
@@ -102,7 +83,7 @@ struct LifePointCounter
 struct HitBox
 {
 	float radius;
-	GamePosition center;
+	Vector center;
 };
 
 struct PhysicsObject
@@ -122,7 +103,7 @@ struct PhysicsObject
 	}
 	void update(float dt);
 
-	inline const GamePosition& getPos() const
+	inline const Vector& getPos() const
 	{
 		return state.pos;
 	}

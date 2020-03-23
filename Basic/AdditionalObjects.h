@@ -1,16 +1,23 @@
 #pragma once
 
-#include "Basic/BasicGameObjects.h"
+#include "Basic/Interfaces.h"
 
-class ParticleField : public GameObject
+class ParticleField:
+	public I_CoreUpdate,
+	public I_Draw
 {
+	std::shared_ptr<I_WorldKinetic> center;
 	std::vector<PhysicsObject> states;
 	std::vector<float> zVals;
 public:
-	ParticleField(size_t count, float maxSpeed, float maxRotation,
-		float minZ, float maxZ, float minSize, float maxSize);
+	ParticleField(size_t count, float maxSpeed,
+		float maxRotation, float minZ, float maxZ,
+		float minSize, float maxSize);
 
-	void updateEngine_Move() override;
+	void setCenter(
+		std::shared_ptr<I_WorldKinetic> inCenter);
 
-	void draw() const override;
+	void updateMovement() override;
+
+	void draw() override;
 };

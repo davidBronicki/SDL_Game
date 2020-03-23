@@ -37,8 +37,8 @@ public:
 class I_WorldPosition
 {
 public:
-	virtual GamePosition const& pos() const = 0;
-	virtual void setPos(GamePosition const& newPos) = 0;
+	virtual Vector const& pos() const = 0;
+	virtual void setPos(Vector const& newPos) = 0;
 };
 class I_WorldKinetic:
 	public virtual I_WorldPosition
@@ -96,7 +96,6 @@ class I_Composite
 public:
 	virtual void updateCollisions() = 0;
 	virtual void updateRemoval() = 0;
-	virtual void remove(I_Child* entity) = 0;
 };
 
 class I_Child : public virtual I_FullObject
@@ -130,12 +129,16 @@ class I_ParentSpace:
 {
 protected:
 	std::vector<std::shared_ptr<I_ChildSpace>> childSpaces;
+	std::vector<I_ChildSpace*> removalList;
 public:
 	void updateMovement() override;
 	void updateControl() override;
 	void updateLogic() override;
 
 	void updateCollisions() override;
+	void updateRemoval() override;
+	void addSpace(std::shared_ptr<I_ChildSpace> space);
+	void removeSpace(I_ChildSpace* space);
 
 	void draw() override;
 };
@@ -144,6 +147,10 @@ class I_ChildSpace:
 	public virtual I_WorldSpace
 {
 	std::weak_ptr<I_WorldSpace> parentSpace;
+public:
+	I_ChildSpace(
+		std::weak_ptr<I_WorldSpace> inParentSpace):
+		parentSpace(inParentSpace){}
 };
 
 /////------------external interface functions-----------\\\\\
@@ -180,17 +187,17 @@ class Pure_WorldPosition:
 	public virtual I_WorldPosition
 {
 protected:
-	GamePosition posistion;
+	Vector posistion;
 public:
 	Pure_WorldPosition(){}
-	Pure_WorldPosition(GamePosition const& init)
+	Pure_WorldPosition(Vector const& init)
 	: posistion(init){}
 
-	GamePosition const& pos() const override
+	Vector const& pos() const override
 	{
 		return posistion;
 	}
-	void setPos(GamePosition const& newPos) override
+	void setPos(Vector const& newPos) override
 	{
 		posistion = newPos;
 	}
@@ -203,7 +210,7 @@ protected:
 	Kinematic state;
 public:
 	Pure_WorldKinetic(){}
-	Pure_WorldKinetic(GamePosition const& initPos)
+	Pure_WorldKinetic(Vector const& initPos)
 	: state(initPos){}
 	Pure_WorldKinetic(Kinematic const& initState)
 	: state(initState){}
@@ -222,11 +229,11 @@ public:
 		return state.angularVel;
 	}
 
-	GamePosition const& pos() const override
+	Vector const& pos() const override
 	{
 		return state.pos;
 	}
-	void setPos(GamePosition const& newPos) override
+	void setPos(Vector const& newPos) override
 	{
 		state.pos = newPos;
 	}
@@ -256,7 +263,7 @@ public:
 		float inRadius, float inMass, float inMoment)
 	: state(Kinematic(),
 		inRadius, inMass, inMoment){}
-	Pure_WorldPhysics(GamePosition const& initPos,
+	Pure_WorldPhysics(Vector const& initPos,
 		float inRadius, float inMass, float inMoment)
 	: state(Kinematic(initPos),
 		inRadius, inMass, inMoment){}
@@ -272,7 +279,7 @@ public:
 		state.torque += torque;
 	}
 
-	GamePosition const& pos() const override
+	Vector const& pos() const override
 	{
 		return state.state.pos;
 	}
@@ -293,7 +300,7 @@ public:
 		return state;
 	}
 
-	void setPos(GamePosition const& newPos) override
+	void setPos(Vector const& newPos) override
 	{
 		state.state.pos = newPos;
 	}

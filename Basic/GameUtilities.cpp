@@ -16,7 +16,7 @@ Vector::Vector()
 Vector::Vector(float inX, float inY)
 	:x(inX), y(inY){}
 
-// Vector::Vector(const GamePosition& input)
+// Vector::Vector(const Vector& input)
 // 	:x(input.x), y(input.y){}
 
 float Vector::magnitude() const
@@ -87,63 +87,6 @@ Vector operator/(Vector left, float right)
 	return left /= right;
 }
 
-/////-------------GamePosition------------------\\\\\
-
-GamePosition::GamePosition()
-	:x(0), y(0){}
-
-GamePosition::GamePosition(float inX, float inY)
-	:x(inX), y(inY){}
-
-GamePosition::GamePosition(const Vector& input)
-	:x(input.x), y(input.y){}
-
-float GamePosition::distance(const GamePosition& otherPoint) const
-{
-	return sqrt(distanceSqr(otherPoint));
-}
-
-float GamePosition::distanceSqr(const GamePosition& otherPoint) const
-{
-	float dx = x - otherPoint.x;
-	float dy = y - otherPoint.y;
-	return dx * dx + dy * dy;
-}
-
-GamePosition& GamePosition::operator+=(const Vector& displacement)
-{
-	x += displacement.x;
-	y += displacement.y;
-	return *this;
-}
-
-GamePosition& GamePosition::operator-=(const Vector& displacement)
-{
-	x -= displacement.x;
-	y -= displacement.y;
-	return *this;
-}
-
-GamePosition operator+(GamePosition left, const Vector& right)
-{
-	return left += right;
-}
-
-GamePosition operator-(GamePosition left, const Vector& right)
-{
-	return left -= right;
-}
-
-GamePosition operator+(const Vector& left, GamePosition right)
-{
-	return right += left;
-}
-
-Vector operator-(const GamePosition& left, const GamePosition& right)
-{
-	return Vector(left.x - right.x, left.y - right.y);
-}
-
 /////-----------------Kinematic--------------------\\\\\
 
 Kinematic::Kinematic()
@@ -156,7 +99,7 @@ Kinematic::Kinematic()
 	angularAcc(0)
 {}
 
-Kinematic::Kinematic(const GamePosition& inPos)
+Kinematic::Kinematic(const Vector& inPos)
 :
 	pos(inPos),
 	vel(),
@@ -166,7 +109,7 @@ Kinematic::Kinematic(const GamePosition& inPos)
 	angularAcc(0)
 {}
 
-Kinematic::Kinematic(const GamePosition& inPos,
+Kinematic::Kinematic(const Vector& inPos,
 		const Vector& inVel)
 :
 	pos(inPos),
@@ -177,7 +120,7 @@ Kinematic::Kinematic(const GamePosition& inPos,
 	angularAcc(0)
 {}
 	
-Kinematic::Kinematic(const GamePosition& inPos,
+Kinematic::Kinematic(const Vector& inPos,
 		float inAngle)
 :
 	pos(inPos),
@@ -188,7 +131,7 @@ Kinematic::Kinematic(const GamePosition& inPos,
 	angularAcc(0)
 {}
 
-Kinematic::Kinematic(const GamePosition& inPos,
+Kinematic::Kinematic(const Vector& inPos,
 		const Vector& inVel,
 		float inAngle, float inAngularVel)
 :
@@ -210,6 +153,42 @@ void Kinematic::update(float dt)
 	angularVel += angularAcc * dt;
 	angle += dt * angularVel;
 	angularAcc = 0;
+}
+
+Kinematic& Kinematic::operator+=(
+	const Kinematic& other)
+{
+	pos += other.pos;
+	vel += other.vel;
+	acc += other.acc;
+	angle += other.angle;
+	angularVel += other.angularVel;
+	angularAcc += other.angularAcc;
+	return *this;
+}
+
+Kinematic& Kinematic::operator-=(
+	const Kinematic& other)
+{
+	pos -= other.pos;
+	vel -= other.vel;
+	acc -= other.acc;
+	angle -= other.angle;
+	angularVel -= other.angularVel;
+	angularAcc -= other.angularAcc;
+	return *this;
+}
+
+Kinematic operator+(Kinematic left,
+	const Kinematic& right)
+{
+	return left += right;
+}
+
+Kinematic operator-(Kinematic left,
+	const Kinematic& right)
+{
+	return left -= right;
 }
 
 /////---------------PhysicsObject-------------------------\\\\\
