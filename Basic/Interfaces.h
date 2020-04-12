@@ -72,6 +72,12 @@ protected:
 	friend float getExitTime(
 		const I_Collidable&, const I_Collidable&);
 
+	void updateHitBoxes(HitBox const& newBox)
+	{
+		previousHitBox = currentHitBox;
+		currentHitBox = newBox;
+	}
+
 	HitBox currentHitBox;
 	HitBox previousHitBox;
 public:
@@ -82,13 +88,6 @@ public:
 	{}
 };
 
-class I_FullObject :
-	public virtual I_CoreUpdate,
-	public virtual I_Draw,
-	public virtual I_Collidable,
-	public virtual I_WorldKinetic
-{};
-
 class I_Child;
 
 class I_Composite
@@ -98,60 +97,28 @@ public:
 	virtual void updateRemoval() = 0;
 };
 
-class I_Child : public virtual I_FullObject
+class I_Child// : public virtual I_FullObject
 {
-protected:
-	std::weak_ptr<I_Composite> parent;
 public:
-	I_Child(std::weak_ptr<I_Composite> inParent):
-		parent(inParent){}
+	virtual std::shared_ptr<I_Composite>
+		getParent() const = 0;
 };
 
 class I_Controllable
 {
-public:
+public://should break this into several functions
+	//if needed for performance
 	virtual void toggleControl(Control key) = 0;
 	virtual void simpleControl(Control key, float controlValue) = 0;
 	virtual void advancedControl(Control key,
 		std::vector<float> const& controlValues) = 0;
 };
 
-class I_WorldSpace:
+class I_FullGameLoop://all game loops
 	public virtual I_CoreUpdate,
 	public virtual I_Composite,
 	public virtual I_Draw
 {};
-
-class I_ChildSpace;
-
-class I_ParentSpace:
-	public virtual I_WorldSpace
-{
-protected:
-	std::vector<std::shared_ptr<I_ChildSpace>> childSpaces;
-	std::vector<I_ChildSpace*> removalList;
-public:
-	void updateMovement() override;
-	void updateControl() override;
-	void updateLogic() override;
-
-	void updateCollisions() override;
-	void updateRemoval() override;
-	void addSpace(std::shared_ptr<I_ChildSpace> space);
-	void removeSpace(I_ChildSpace* space);
-
-	void draw() override;
-};
-
-class I_ChildSpace:
-	public virtual I_WorldSpace
-{
-	std::weak_ptr<I_WorldSpace> parentSpace;
-public:
-	I_ChildSpace(
-		std::weak_ptr<I_WorldSpace> inParentSpace):
-		parentSpace(inParentSpace){}
-};
 
 /////------------external interface functions-----------\\\\\
 

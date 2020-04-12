@@ -2,75 +2,77 @@
 
 #include "SDL_Handling/SDL_Handling.h"
 #include "Basic/GameUtilities.h"
-// // #include "Basic/BasicGameObjects.h"
-// #include "Basic/AdditionalObjects.h"
-// #include "Basic/Player.h"
-// #include "Basic/Game.h"
 
 #include "Basic/Interfaces.h"
 
-// class Entity:
-// 	public I_CoreUpdate,
-// 	public Pure_Draw
-// {};
+class Projectile;
 
-class I_Hittable;
+class I_FullWorldObject:
+	public virtual I_CoreUpdate,
+	public virtual I_Draw,
+	public virtual I_Collidable,
+	public virtual I_WorldKinetic,
+	public virtual I_Child
+{
+public:
+	virtual void hit(Projectile& hit) = 0;
+};
 
 class Projectile://assumed kinetic for now
-	public I_Child,
-	public Pure_WorldPhysics,
-	public Pure_Draw
+	public virtual I_CoreUpdate,
+	public virtual I_Collidable,
+	public virtual I_Child,
+	public virtual Pure_WorldPhysics,
+	public virtual Pure_Draw
 {
-	friend I_Hittable;
+protected:
+	friend I_FullWorldObject;
+
+	std::weak_ptr<I_Composite> parent;
 public:
 	Projectile(
 		std::weak_ptr<I_Composite> inParent,
 		ImageTexture const& inTexture,
 		PhysicsObject const& initState);
 
-	virtual void collide(I_Hittable* hit);
+	virtual void collide(I_FullWorldObject* hit);
 
 	void updateMovement() override;
 	void updateControl() override{}
 	void updateLogic() override{}
 
-	void draw() override;
-};
+	std::shared_ptr<I_Composite>
+		getParent() const override;
 
-class I_Hittable:
-	public I_Child
-{
-public:
-	I_Hittable(std::weak_ptr<I_Composite> parent)
-		:I_Child(parent){}
-	virtual void hit(Projectile& hit) = 0;
+	void draw() override;
 };
 
 class ParticleField;
 
 class PlaySpace:
-	public I_ChildSpace
+	public I_FullGameLoop
 {
 protected:
-	std::vector<std::shared_ptr<I_Hittable>> childEntities;
-	std::vector<std::shared_ptr<Projectile>> projectiles;
+	std::vector<std::shared_ptr<I_FullWorldObject>>
+		childEntities;
+	std::vector<std::shared_ptr<Projectile>>
+		projectiles;
 
 	std::vector<I_Child*> removalList;
 
 	std::shared_ptr<I_WorldKinetic> centerPoint;
-	Vector stationaryVelocity;
+	Vector stationaryVelocity;//accrues velocity
+	//since centerPoint will be modified to zero v
 
 	std::shared_ptr<ParticleField> particleField;
 public:
-	PlaySpace(std::shared_ptr<I_ParentSpace> inParent);
+	PlaySpace();
 
 	void setCenter(
 		std::shared_ptr<I_WorldKinetic> newCenter);
 
 	Vector const& getStationaryVelocity() const;
 
-	// void addEntity(std::shared_ptr<I_Hittable> entity);
-	
 	void updateMovement() final;
 	void updateControl() final;
 	void updateLogic() final;
@@ -78,7 +80,7 @@ public:
 	void updateCollisions() final;
 	void updateRemoval() final;
 	void remove(I_Child* entity);
-	void addEntity(std::shared_ptr<I_Hittable> entity);
+	void addEntity(std::shared_ptr<I_FullWorldObject> entity);
 	void addProjectile(
 		std::shared_ptr<Projectile> projectile);
 
@@ -121,7 +123,7 @@ class Player;
 #define game Game::getInstance()
 
 class Game:
-	public I_ParentSpace
+	public I_FullGameLoop
 {
 	std::weak_ptr<Game> self;
 
@@ -139,10 +141,14 @@ public:
 	void initialize();
 	void run();
 
-	void updateControl() override;
-	void updateLogic() override;
+	void updateMovement() final;
+	void updateControl() final;
+	void updateLogic() final;
 
-	void draw() override;
+	void updateCollisions() final;
+	void updateRemoval() final;
+
+	void draw() final;
 };
 
 

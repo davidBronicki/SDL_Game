@@ -7,12 +7,6 @@ float inline randValue()
 	return (float)std::rand() / RAND_MAX;
 }
 
-// template<typename T, typename S>
-// T* getP(shared_ptr<S> input)
-// {
-// 	return (T*)(input.get());
-// }
-
 class GameUpdateEnvironment
 {
 	static float dt;
@@ -71,6 +65,7 @@ struct Kinematic
 	Kinematic& operator+=(const Kinematic& other);
 	Kinematic& operator-=(const Kinematic& other);
 };
+
 Kinematic operator+(Kinematic left, const Kinematic& right);
 Kinematic operator-(Kinematic left, const Kinematic& right);
 
@@ -107,7 +102,14 @@ struct PhysicsObject
 	{
 		return state.pos;
 	}
+	PhysicsObject& operator+=(const PhysicsObject& other);
+	PhysicsObject& operator-=(const PhysicsObject& other);
 };
+
+PhysicsObject operator+(
+	PhysicsObject left, const PhysicsObject& right);
+PhysicsObject operator-(
+	PhysicsObject left, const PhysicsObject& right);
 
 float getCollisionTime(
 	const HitBox& Astart, const HitBox& Aend,

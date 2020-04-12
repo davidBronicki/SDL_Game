@@ -83,27 +83,19 @@ void Player::updateControl()
 	{
 		ship->inertialBrake();
 	}
-	// ship->updateControl();
 }
 
 void Player::updateLogic()
 {
 	cam.setPosition(this, ship->getKinetics().pos);
-
-	// ship->updateLogic();
 }
 
 void Player::updateMovement()
 {
-	// ship->updateMovement();
-}
 
-// void Player::updateEngine_Collision()
-// {
-// 	// ship->updateEngine_Collision(ship);
-// }
+}
 
 void Player::draw()
 {
-	// ship->draw();
+	
 }

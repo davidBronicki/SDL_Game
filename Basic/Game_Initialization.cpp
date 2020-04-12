@@ -8,7 +8,6 @@ using namespace std;
 Game::Game()
 :
 	player(make_shared<Player>())
-	// playSpace(make_shared<PlaySpace>())
 {
 }
 
@@ -20,10 +19,7 @@ void Game::makeInstance()
 
 void Game::initialize()
 {
-	playSpace = make_shared<PlaySpace>(
-		static_pointer_cast<I_ParentSpace>(self.lock()));
-
-	childSpaces.push_back(playSpace);
+	playSpace = make_shared<PlaySpace>();
 
 	shared_ptr<Ship> playerShip(make_shared<Ship>(
 		playSpace,
@@ -56,7 +52,7 @@ void Game::initialize()
 	playSpace->setCenter(playerShip);
 
 	shared_ptr<Ship> aiShip(make_shared<Ship>(
-		playerShip,
+		playSpace,
 		Vector(20,20)));
 	aiShip->setChassis(make_shared<ShipChassis>(
 		aiShip,
@@ -104,10 +100,8 @@ void Game::run()
 		updateControl();
 		updateMovement();
 		updateCollisions();
-		// updateEngine_Collision(
-		// 	shared_ptr<GameObject>(NULL));
+		updateRemoval();
 		updateLogic();
-		// updateGame_RemovalLogic();
 		draw();
 	}
 }

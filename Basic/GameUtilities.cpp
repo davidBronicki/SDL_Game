@@ -16,9 +16,6 @@ Vector::Vector()
 Vector::Vector(float inX, float inY)
 	:x(inX), y(inY){}
 
-// Vector::Vector(const Vector& input)
-// 	:x(input.x), y(input.y){}
-
 float Vector::magnitude() const
 {
 	return sqrt(magnitudeSqr());
@@ -213,11 +210,36 @@ void PhysicsObject::update(float dt)
 	torque = 0;
 }
 
+
+PhysicsObject& PhysicsObject::operator+=(
+	const PhysicsObject& other)
+{
+	state += other.state;
+	return *this;
+}
+
+PhysicsObject& PhysicsObject::operator-=(
+	const PhysicsObject& other)
+{
+	state -= other.state;
+	return *this;
+}
+
+PhysicsObject operator+(
+	PhysicsObject left, const PhysicsObject& right)
+{
+	return left += right;
+}
+
+PhysicsObject operator-(
+	PhysicsObject left, const PhysicsObject& right)
+{
+	return left -= right;
+}
+
 /////---------------LifePointCounter-------------\\\\\
 
 /////-----------------HitBox---------------------\\\\\
-
-#include <iostream>
 
 float getCollisionTime(
 	const HitBox& Astart, HitBox const& Aend,
@@ -244,13 +266,8 @@ float getCollisionTime(
 		return -1;
 	}
 	else
-		return (-posDotVelocity + sqrt(discriminant))
+		return (-posDotVelocity - sqrt(discriminant))
 			/ velocityMagnitudeSquared;
-	// {
-	// 	float timeOfCollision = (-posDotVelocity - sqrt(discriminant)) / velocityMagnitudeSquared;
-	// 	if (timeOfCollision > 1 || timeOfCollision < 0) return -1;//collision didn't happen in this time step
-	// 	else return timeOfCollision;
-	// }
 }
 
 

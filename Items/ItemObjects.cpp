@@ -12,19 +12,6 @@ Item::Item(unsigned int initialCount,
 	Pure_Draw(inTexture)
 {}
 
-// void Item::updateGame_ControlLogic()
-// {
-
-// }
-// void Item::updateGame_GeneralLogic()
-// {
-
-// }
-// void Item::updateEngine_Move()
-// {
-
-// }
-
 void Item::draw()
 {
 
@@ -39,6 +26,8 @@ Ammunition::Ammunition(unsigned int initialCount,
 	projectileTexture(inProjectileTexture),
 	damageModifier(inDamageModifier)
 {}
+
+#include <iostream>
 
 shared_ptr<Projectile> Ammunition::use(
 	shared_ptr<I_Composite> parent,
@@ -55,9 +44,7 @@ shared_ptr<Projectile> Ammunition::use(
 					+ weaponState.vel,//velocity
 				weaponState.angle,//angle
 				0),//angular velocity
-			0.1,//radius
 			1,//mass
-			1));//,//mom of inertia
-		// baseDamage * damageModifier,//damage
-		// 100);//lifetime
+			1,//mom of inertia
+			0.1));//radius
 }

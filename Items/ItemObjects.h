@@ -12,10 +12,6 @@ public:
 	Item(unsigned int initialCount,
 		const ImageTexture& inTexture);
 
-	// void updateGame_ControlLogic() override;
-	// void updateGame_GeneralLogic() override;
-	// void updateEngine_Move() override;
-
 	void draw() override;
 };
 

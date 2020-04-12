@@ -25,8 +25,6 @@ public:
 	void updateLogic() override;
 
 	void updateMovement() override;
-	// void updateEngine_Collision(
-	// 	std::shared_ptr<GameObject> self) override;
 
 	void draw() override;
 };

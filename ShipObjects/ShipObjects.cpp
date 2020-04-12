@@ -1,6 +1,5 @@
 #include "ShipObjects/ShipObjects.h"
-// #include "Items/ItemObjects.h"
-// #include "Projectiles/Projectiles.h"
+#include "Items/ItemObjects.h"
 
 #include "math.h"
 
@@ -11,32 +10,46 @@ using namespace std;
 /////----------------ShipComponent-----------------\\\\\
 
 ShipComponent::ShipComponent(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState)
 :
-	I_Hittable(parent),
+	parentShip(parent),
 	Pure_Draw(inTexture),
 	Pure_WorldPhysics(inState),
 	hp{(float)maxHP, maxHP}
 {}
 
+shared_ptr<I_Composite> ShipComponent::getParent() const
+{
+	return dynamic_pointer_cast<I_Composite>(
+		parentShip.lock());
+}
+
 void ShipComponent::hit(Projectile& hit)
 {
 	hp.health -= 10;
-	// hp.health -= p->getDamage();
-	// game.removeFromUpdates((Entity*)(&p));
+}
+
+void ShipComponent::updateMovement()
+{
+	Pure_WorldPhysics::update(
+		GameUpdateEnvironment::getDT());
+	updateHitBoxes({state.radius,state.state.pos});
 }
 
 void ShipComponent::draw()
 {
-	worldTexture.draw(cam.stateToParameters(state));
+	worldTexture.draw(cam.stateToParameters(
+		state
+		+ dynamic_pointer_cast<Ship>(parentShip.lock())
+		->getState()));
 }
 
 /////----------------ShipChassis----------------\\\\\
 
 ShipChassis::ShipChassis(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	const std::vector<size_t>& inComponentSlots)
@@ -62,7 +75,7 @@ size_t ShipChassis::shieldCount()
 /////---------------------Hull----------------------\\\\\
 
 Hull::Hull(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState)
 :
@@ -73,7 +86,7 @@ Hull::Hull(
 /////------------------Engine-------------------\\\\\
 
 Engine::Engine(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	float inThrust)
@@ -86,7 +99,7 @@ Engine::Engine(
 /////------------------Weapon-------------------\\\\\
 
 Weapon::Weapon(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	int inBaseDamage,
@@ -105,13 +118,16 @@ void Weapon::pointTo(float angle)
 
 void Weapon::fire()
 {
-	// ammo->use( state.state, baseDamage);
+	dynamic_pointer_cast<PlaySpace>(
+		parentShip.lock()->getParent())->addProjectile(
+			(ammo->use(parentShip.lock()->getParent(),
+				state.state, baseDamage)));
 }
 
 /////------------------Shield-------------------\\\\\
 
 Shield::Shield(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<Ship> parent,
 	const ImageTexture& inTexture,
 	int maxHP, const PhysicsObject& inState,
 	int maxSP, float inShieldDamageReduction)
@@ -124,18 +140,18 @@ Shield::Shield(
 
 /////--------------------Ship-------------------\\\\\
 
-Vector Ship::velocityFromStationary() const
+Vector Ship::trueVelocity() const
 {
 	return state.state.vel +
-		dynamic_pointer_cast<PlaySpace>(parent.lock())
+		dynamic_pointer_cast<PlaySpace>(playSpace.lock())
 		->getStationaryVelocity();
 }
 
 Ship::Ship(
-	weak_ptr<I_Composite> parent,
+	weak_ptr<PlaySpace> inPlaySpace,
 	const Vector& inPos)
 :
-	I_Hittable(parent),
+	playSpace(inPlaySpace),
 	Pure_WorldPhysics(inPos, 1, 1, 1),
 	inertialDampenerEngaged(true)
 {}
@@ -175,7 +191,6 @@ void Ship::setWeapon(shared_ptr<Weapon> newWeapon, size_t slot)
 	if (slot <= weaponBank.size())
 	{
 		weaponBank[slot] = newWeapon;
-		// newWeapon->noAngleFlag = true;
 		components.push_back(newWeapon);
 	}
 	else
@@ -219,7 +234,7 @@ void Ship::accelLeft()
 
 void Ship::inertialBrake()
 {
-	state.force -= velocityFromStationary() * 2.0;
+	state.force -= trueVelocity() * 2.0;
 }
 
 void Ship::rotateLeft()
@@ -262,74 +277,49 @@ void Ship::fire(size_t weaponSlot)
 	}
 }
 
+
+shared_ptr<I_Composite> Ship::getParent() const
+{
+	return dynamic_pointer_cast<I_Composite>(
+		playSpace.lock());
+}
+
 void Ship::hit(Projectile& hit)
 {
 
 	/*
 
-***I am temporarily forgoing the following.
 While the projectile is inside the ship, it will
 not be able to collide with anything in the environment.
-This can be changed if need be.
-
-Potential bug: I am aiming to make this able
-to collide with internal structures of the ship
-and simultaniously be able to collide with other objects
-just in case there are very nearby objects.
-
-It is possible for there to be a very nearby composite
-object (such as a ship) which will sieze control
-of the projectile upon calling of collide. This
-would take control away from this ship and therefor
-not allow impact with internal structures of this ship.
 
 	*/
 
-	// game.removeFromUpdates((Entity*)(&hit));
-	// insideShots.push_back(p);
-
 	chassis->hit(hit);
 	if (chassis->hp.health <= 0)
-		dynamic_pointer_cast<PlaySpace>
-			(parent.lock())->remove(this);
+		playSpace.lock()->remove(this);
+	playSpace.lock()->remove(&hit);
 }
 
 void Ship::updateMovement()
 {
 	if (inertialDampenerEngaged)
 	{
-		state.force -= state.state.vel * 0.2;
+		state.force -= trueVelocity() * 0.2;
 		state.torque -= state.state.angularVel * 5.0;
 	}
 	Pure_WorldPhysics::update(
 		GameUpdateEnvironment::getDT());
-	chassis->setState(state);
+	updateHitBoxes({state.radius,state.state.pos});
+}
 
-	// for (auto&& item : components)
-	// {
-	// 	item->updateMovement();
-	// }
+void Ship::updateControl()
+{
 
-	// for ()
+}
 
-	// for (auto&& projectile : insideShots)
-	// {
-	// 	projectile->updateMovement();
-	// 	Entity* hitObject(NULL);
-	// 	// float earliestImpact = game.projectileHitDetection(
-	// 	// 	*projectile, hitObject);
-	// 	float earliestImpact = 2;
-	// 	for (auto&& item : children)
-	// 	{
-	// 		float impactTime = projectileHitDetection(
-	// 			*projectile, *item);
-	// 		if (impactTime > 0 && impactTime < earliestImpact)
-	// 		{
-	// 			earliestImpact = impactTime;
-	// 			hitObject = item.get();
-	// 		}
-	// 	}
-	// }
+void Ship::updateLogic()
+{
+
 }
 
 void Ship::updateCollisions()
