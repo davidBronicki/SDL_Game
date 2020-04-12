@@ -123,9 +123,9 @@ void PlaySpace::updateRemoval()
 	removalList.clear();
 }
 
-void PlaySpace::remove(I_Child* entity)
+void PlaySpace::remove(I_Child* removalItem)
 {
-	removalList.push_back(entity);
+	removalList.push_back(removalItem);
 }
 
 void PlaySpace::addEntity(shared_ptr<I_FullWorldObject> entity)

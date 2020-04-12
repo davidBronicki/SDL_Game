@@ -34,6 +34,12 @@ void Projectile::updateMovement()
 	updateHitBoxes({state.radius,state.state.pos});
 }
 
+void Projectile::updateLogic()
+{
+	if (state.state.pos.magnitudeSqr() > 10000)
+		parent.lock()->remove(this);
+}
+
 void Projectile::draw()
 {
 	worldTexture.draw(cam.stateToParameters(state));

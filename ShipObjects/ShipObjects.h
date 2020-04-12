@@ -165,6 +165,7 @@ public:
 
 	void updateCollisions() override;
 	void updateRemoval() override;
+	void remove(I_Child* removeItem) override;
 
 	void draw() override;
 };

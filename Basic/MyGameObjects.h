@@ -39,7 +39,7 @@ public:
 
 	void updateMovement() override;
 	void updateControl() override{}
-	void updateLogic() override{}
+	void updateLogic() override;
 
 	std::shared_ptr<I_Composite>
 		getParent() const override;
@@ -79,7 +79,7 @@ public:
 
 	void updateCollisions() final;
 	void updateRemoval() final;
-	void remove(I_Child* entity);
+	void remove(I_Child* removeItem) override;
 	void addEntity(std::shared_ptr<I_FullWorldObject> entity);
 	void addProjectile(
 		std::shared_ptr<Projectile> projectile);
@@ -147,6 +147,7 @@ public:
 
 	void updateCollisions() final;
 	void updateRemoval() final;
+	void remove(I_Child* removeItem) override;
 
 	void draw() final;
 };

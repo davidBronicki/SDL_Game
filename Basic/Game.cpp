@@ -31,6 +31,11 @@ void Game::updateRemoval()
 	playSpace->updateRemoval();
 }
 
+void Game::remove(I_Child* removeItem)
+{
+	
+}
+
 void Game::draw()
 {
 	GameDrawEnvironment::clearRender();

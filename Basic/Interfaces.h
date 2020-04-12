@@ -95,6 +95,7 @@ class I_Composite
 public:
 	virtual void updateCollisions() = 0;
 	virtual void updateRemoval() = 0;
+	virtual void remove(I_Child* removeItem) = 0;
 };
 
 class I_Child// : public virtual I_FullObject

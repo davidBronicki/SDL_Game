@@ -328,7 +328,14 @@ void Ship::updateCollisions()
 }
 
 void Ship::updateRemoval()
-{}
+{
+
+}
+
+void Ship::remove(I_Child* removeItem)
+{
+	
+}
 
 void Ship::draw()
 {
