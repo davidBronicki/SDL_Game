@@ -2,7 +2,6 @@
 
 #include "Basic/MyGameObjects.h"
 
-
 class Ship;
 
 class ShipComponent:
@@ -100,23 +99,11 @@ public:
 		int maxSP, float inShieldDamageReduction);
 };
 
-// struct SensorDatum
-// {
-// 	struct ShipDetection
-// 	{
-// 		std::shared_ptr<Ship> ship;
-// 	};
-// 	enum class DetectionType
-// 	{
-// 		SHIP
-// 	};
-// 	union Detection
-// 	{
-// 		ShipDetection ship;
-// 	};
-// 	DetectionType type;
-// 	Detection detection;
-// };
+struct SensorDatum
+{
+	Vector pos, vel;
+	LifePointCounter ScannableHealth, scannableShields;
+};
 
 class AI;
 
@@ -175,9 +162,9 @@ public:
 	//weapon control
 	void fire(size_t weaponSlot);
 
-	// //sensors
-	// std::shared_ptr<std::vector<SensorDatum>>
-	// 	pullSensors();
+	//sensors
+	std::shared_ptr<std::vector<SensorDatum>>
+		pullSensors();
 
 	/////parrent class functions\\\\\
 

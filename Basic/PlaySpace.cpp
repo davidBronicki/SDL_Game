@@ -139,6 +139,12 @@ void PlaySpace::addProjectile(
 	projectiles.push_back(projectile);
 }
 
+vector<shared_ptr<I_FullWorldObject>> const&
+	PlaySpace::getFieldStatus() const
+{
+	return childEntities;
+}
+
 void PlaySpace::draw()
 {
 	particleField->draw();

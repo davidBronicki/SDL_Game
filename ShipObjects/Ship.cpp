@@ -1,5 +1,6 @@
 #include "ShipObjects/ShipObjects.h"
 #include "AI/ai_base.h"
+// #include <memory>
 
 using namespace std;
 
@@ -145,14 +146,31 @@ void Ship::fire(size_t weaponSlot)
 		throw length_error("Weapon slot out of range.");
 	}
 }
+// #include <iostream>
+std::shared_ptr<std::vector<SensorDatum>>
+	Ship::pullSensors()
+{
+	auto output(make_shared<vector<SensorDatum>>());
 
-// std::shared_ptr<std::vector<SensorDatum>>
-// 	Ship::pullSensors()
-// {
-// 	auto output(make_shared<std::vector<SensorDatum>>());
+	auto fieldEntityStatus(
+		playSpace.lock()->getFieldStatus());
 
-// 	return output;
-// }
+	for (auto&& entity : fieldEntityStatus)
+	{
+		if (entity.get() != this)
+		{
+			output->push_back({
+					entity->pos()
+						-state.state.pos,
+					entity->vel()
+						-state.state.vel,
+					LifePointCounter(),
+					LifePointCounter()});
+		}
+	}
+
+	return output;
+}
 
 
 shared_ptr<I_Composite> Ship::getParent() const

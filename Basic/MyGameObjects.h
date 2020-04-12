@@ -84,6 +84,10 @@ public:
 	void addProjectile(
 		std::shared_ptr<Projectile> projectile);
 
+	std::vector<std::shared_ptr<
+		I_FullWorldObject>> const&
+			getFieldStatus() const;
+
 	void draw() final;
 };
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Basic/Interfaces.h"
-#include "AI/ai_base.h"
 
+class PlayerController;
 class Ship;
 
 class Player:

@@ -1,5 +1,6 @@
 #include "Basic/Player.h"
 #include "ShipObjects/ShipObjects.h"
+#include "AI/ai_base.h"
 
 #include <iostream>
 

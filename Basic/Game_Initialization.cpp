@@ -2,6 +2,7 @@
 #include "Basic/Player.h"
 #include "ShipObjects/ShipObjects.h"
 #include "Items/ItemObjects.h"
+#include "AI/ai_base.h"
 
 using namespace std;
 
@@ -77,7 +78,7 @@ void Game::initialize()
 			1.0)), 0);//damage modifier and weapon slot
 	playSpace->addEntity(aiShip);
 	aiShip->setShipController(
-		make_shared<PlayerController>(aiShip));
+		make_shared<BasicAI>(aiShip));
 
 	Keyboard::subscribeToKeyPressed(
 		function<void(Key)>([](Key key) -> void

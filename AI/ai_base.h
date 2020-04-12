@@ -8,9 +8,29 @@ protected:
 	std::weak_ptr<Ship> controlObject;
 public:
 	AI(std::weak_ptr<Ship> inControlObject);
-	// void updateMovement() override{}
-	// void updateControl() override;
-	// void updateLogic() override;
+};
+
+class NoControl:
+	public AI
+{
+public:
+	NoControl(std::weak_ptr<Ship> inControlObject)
+	: AI(inControlObject){}
+	void updateMovement() override{}
+	void updateControl() override{}
+	void updateLogic() override{}
+};
+
+class BasicAI:
+	public AI
+{
+	std::shared_ptr<std::vector<SensorDatum>> workingData;
+	SensorDatum* targetLock;
+public:
+	BasicAI(std::weak_ptr<Ship> inControlObject);
+	void updateMovement() override{}
+	void updateControl() override;
+	void updateLogic() override;
 };
 
 class PlayerController:

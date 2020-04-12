@@ -8,6 +8,51 @@ AI::AI(weak_ptr<Ship> inControlObject)
 	controlObject(inControlObject)
 {}
 
+/////-----------------BasicAI-----------------\\\\\
+
+BasicAI::BasicAI(weak_ptr<Ship> inControlObject)
+:
+	AI(inControlObject)
+{}
+
+void BasicAI::updateControl()
+{
+	if (targetLock != NULL)
+	{
+		float angle = atan2(targetLock->pos.y,
+			targetLock->pos.x);
+		controlObject.lock()->pointAtAngle(angle);
+	}
+}
+
+void BasicAI::updateLogic()
+{
+	workingData = controlObject.lock()->pullSensors();
+
+	if (workingData->size() != 0)
+	{
+		SensorDatum* minDistanceObject(
+			(*workingData).data());
+		float minDistSqr = 1e30f;
+		for (auto&& item : *workingData)
+		{
+			float distanceSqr = item.pos.magnitudeSqr();
+			if (distanceSqr < minDistSqr)
+			{
+				minDistanceObject = &item;
+				minDistSqr = distanceSqr;
+			}
+		}
+		targetLock = minDistanceObject;
+	}
+	else
+	{
+		targetLock = NULL;
+	}
+}
+
+/////-------------PlayerController-------------\\\\\
+
 PlayerController::PlayerController(
 	weak_ptr<Ship> inControlObject)
 :
@@ -16,7 +61,6 @@ PlayerController::PlayerController(
 	Mouse::subscribeToButtonPressed(
 		function<void(Button)>([this](Button button) -> void
 		{
-			cout << "reached " << this << endl;
 			if (button == Button::Left)
 			{
 				try
