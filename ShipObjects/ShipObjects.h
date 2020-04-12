@@ -100,6 +100,26 @@ public:
 		int maxSP, float inShieldDamageReduction);
 };
 
+// struct SensorDatum
+// {
+// 	struct ShipDetection
+// 	{
+// 		std::shared_ptr<Ship> ship;
+// 	};
+// 	enum class DetectionType
+// 	{
+// 		SHIP
+// 	};
+// 	union Detection
+// 	{
+// 		ShipDetection ship;
+// 	};
+// 	DetectionType type;
+// 	Detection detection;
+// };
+
+class AI;
+
 class Ship:
 	public I_FullWorldObject,
 	public Pure_WorldPhysics,
@@ -108,6 +128,7 @@ class Ship:
 	bool inertialDampenerEngaged;
 
 	std::weak_ptr<PlaySpace> playSpace;
+	std::shared_ptr<AI> controller;
 
 	std::vector<std::shared_ptr<ShipComponent>> components;
 
@@ -136,6 +157,8 @@ public:
 
 	/////ship control logic\\\\\
 
+	void setShipController(std::shared_ptr<AI> newController);
+
 	//engine control
 	void accelForward();
 	void accelBackward();
@@ -151,6 +174,10 @@ public:
 
 	//weapon control
 	void fire(size_t weaponSlot);
+
+	// //sensors
+	// std::shared_ptr<std::vector<SensorDatum>>
+	// 	pullSensors();
 
 	/////parrent class functions\\\\\
 

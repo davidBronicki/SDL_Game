@@ -76,6 +76,8 @@ void Game::initialize()
 			ImageTexture("Textures/graph.png"),//projectile texture
 			1.0)), 0);//damage modifier and weapon slot
 	playSpace->addEntity(aiShip);
+	aiShip->setShipController(
+		make_shared<PlayerController>(aiShip));
 
 	Keyboard::subscribeToKeyPressed(
 		function<void(Key)>([](Key key) -> void

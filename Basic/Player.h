@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Basic/Interfaces.h"
+#include "AI/ai_base.h"
 
 class Ship;
 
@@ -9,12 +10,7 @@ class Player:
 	public I_Draw
 {
 	std::shared_ptr<Ship> ship;
-
-	enum controlScheme
-	{
-		PointToRotate,
-		ButtonRotate
-	} controls = controlScheme::PointToRotate;
+	std::shared_ptr<PlayerController> controller;
 
 public:
 	Player();
