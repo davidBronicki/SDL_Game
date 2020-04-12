@@ -209,17 +209,25 @@ void Ship::updateMovement()
 
 void Ship::updateControl()
 {
+	for (auto&& component : components)
+	{
+		component->updateControl();
+	}
 	controller->updateControl();
 }
 
 void Ship::updateLogic()
 {
+	for (auto&& component : components)
+	{
+		component->updateLogic();
+	}
 	controller->updateLogic();
 }
 
 void Ship::updateCollisions()
 {
-
+	
 }
 
 void Ship::updateRemoval()

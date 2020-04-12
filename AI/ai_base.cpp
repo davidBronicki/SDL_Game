@@ -22,6 +22,7 @@ void BasicAI::updateControl()
 		float angle = atan2(targetLock->pos.y,
 			targetLock->pos.x);
 		controlObject.lock()->pointAtAngle(angle);
+		controlObject.lock()->fire(0);
 	}
 }
 

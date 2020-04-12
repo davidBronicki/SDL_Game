@@ -76,6 +76,8 @@ class Weapon : public ShipComponent
 {
 protected:
 	int baseDamage;
+	int cooldown;
+	int currentCooldown;
 	std::shared_ptr<Ammunition> ammo;
 public:
 	Weapon(std::weak_ptr<Ship> parent,
@@ -85,6 +87,8 @@ public:
 		std::shared_ptr<Ammunition> inAmmo);
 	void pointTo(float angle);
 	void fire();
+
+	void updateLogic() override;
 };
 
 class Shield : public ShipComponent

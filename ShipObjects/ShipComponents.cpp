@@ -104,7 +104,9 @@ Weapon::Weapon(
 	ShipComponent(parent, inTexture,
 		maxHP, inState),
 	baseDamage(inBaseDamage),
-	ammo(inAmmo)
+	ammo(inAmmo),
+	cooldown(60),
+	currentCooldown(0)
 {}
 
 void Weapon::pointTo(float angle)
@@ -114,10 +116,19 @@ void Weapon::pointTo(float angle)
 
 void Weapon::fire()
 {
-	dynamic_pointer_cast<PlaySpace>(
-		parentShip.lock()->getParent())->addProjectile(
-			(ammo->use(parentShip.lock()->getParent(),
-				state.state, baseDamage)));
+	if (currentCooldown <= 0)
+	{
+		dynamic_pointer_cast<PlaySpace>(
+			parentShip.lock()->getParent())->addProjectile(
+				(ammo->use(parentShip.lock()->getParent(),
+					state.state, baseDamage)));
+		currentCooldown = cooldown;
+	}
+}
+
+void Weapon::updateLogic()
+{
+	--currentCooldown;
 }
 
 /////------------------Shield-------------------\\\\\
