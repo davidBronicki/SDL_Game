@@ -118,10 +118,15 @@ void Weapon::fire()
 {
 	if (currentCooldown <= 0)
 	{
+		auto parentState = parentShip.lock()->getKinetics();
+		Kinematic globalState = state.state;
+		globalState.pos += parentState.pos;
+		globalState.vel += parentState.vel;
+
 		dynamic_pointer_cast<PlaySpace>(
 			parentShip.lock()->getParent())->addProjectile(
 				(ammo->use(parentShip.lock()->getParent(),
-					state.state, baseDamage)));
+					globalState, baseDamage)));
 		currentCooldown = cooldown;
 	}
 }
