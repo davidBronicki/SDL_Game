@@ -1,6 +1,8 @@
 #include "AI/ai_base.h"
 #include <iostream>
 
+#include "Settings/controlMap.h"
+
 using namespace std;
 
 AI::AI(weak_ptr<Ship> inControlObject)
@@ -105,11 +107,11 @@ void PlayerController::updateControl()
 		break;
 		case controlScheme::ButtonRotate:
 		{
-			if (Keyboard::isDown(Key::D))
+			if (Keyboard::isDown(ControlMap::getActionKey(Action::RotateRight)))
 			{
 				controlObject.lock()->rotateRight();
 			}
-			else if (Keyboard::isDown(Key::A))
+			else if (Keyboard::isDown(ControlMap::getActionKey(Action::RotateLeft)))
 			{
 				controlObject.lock()->rotateLeft();
 			}
@@ -117,12 +119,12 @@ void PlayerController::updateControl()
 		break;
 	}
 
-	if (Keyboard::isDown(Key::W) || Mouse::isDown(Button::Right))
+	if (Keyboard::isDown(ControlMap::getActionKey(Action::AccelForward)) || Mouse::isDown(Button::Right))
 	{
 		controlObject.lock()->accelForward();
 	}
 
-	if (Keyboard::isDown(Key::S))
+	if (Keyboard::isDown(ControlMap::getActionKey(Action::Decel)))
 	{
 		controlObject.lock()->inertialBrake();
 	}

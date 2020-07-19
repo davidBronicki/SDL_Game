@@ -3,6 +3,7 @@
 #include "ShipObjects/ShipObjects.h"
 #include "Items/ItemObjects.h"
 #include "AI/ai_base.h"
+#include "Settings/controlMap.h"
 
 using namespace std;
 
@@ -20,6 +21,8 @@ void Game::makeInstance()
 
 void Game::initialize()
 {
+	ControlMap::init();
+
 	playSpace = make_shared<PlaySpace>();
 
 	shared_ptr<Ship> playerShip(make_shared<Ship>(
