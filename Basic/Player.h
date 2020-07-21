@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Basic/Interfaces.h"
+#include "Basic/UI.h"
 
 class PlayerController;
 class Ship;
@@ -11,9 +12,10 @@ class Player:
 {
 	std::shared_ptr<Ship> ship;
 	std::shared_ptr<PlayerController> controller;
+	std::shared_ptr<HUD> hud;
 
 public:
-	Player();
+	Player(std::shared_ptr<HUD> inHud);
 
 	void newShip(std::shared_ptr<Ship> newShip);
 

@@ -4,6 +4,7 @@
 #include "Basic/GameUtilities.h"
 
 #include "Basic/Interfaces.h"
+#include "Basic/UI.h"
 
 class Projectile;
 
@@ -133,6 +134,7 @@ class Game:
 
 	std::shared_ptr<Player> player;
 	std::shared_ptr<PlaySpace> playSpace;
+	std::shared_ptr<HUD> hud;
 
 	Game();
 public:

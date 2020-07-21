@@ -6,7 +6,8 @@
 
 using namespace std;
 
-Player::Player()
+Player::Player(shared_ptr<HUD> inHud):
+	hud(inHud)
 {
 	Keyboard::subscribeToKeyPressed(
 		function<void(Key)>([this](Key key) -> void
@@ -20,7 +21,7 @@ Player::Player()
 
 void Player::newShip(shared_ptr<Ship> newShip)
 {
-	controller = make_shared<PlayerController>(newShip);
+	controller = make_shared<PlayerController>(newShip, hud);
 	newShip->setShipController(controller);
 	ship = newShip;
 }

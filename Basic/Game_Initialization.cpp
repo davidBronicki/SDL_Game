@@ -5,12 +5,15 @@
 #include "AI/ai_base.h"
 #include "Settings/controlMap.h"
 
+#include <iostream>
+
 using namespace std;
 
 Game::Game()
 :
-	player(make_shared<Player>())
+	hud(make_shared<HUD>())
 {
+	player = make_shared<Player>(hud);
 }
 
 void Game::makeInstance()

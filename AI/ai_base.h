@@ -1,5 +1,6 @@
 #pragma once
 #include "ShipObjects/ShipObjects.h"
+#include "Basic/UI.h"
 
 class AI:
 	public I_CoreUpdate
@@ -41,8 +42,10 @@ class PlayerController:
 		PointToRotate,
 		ButtonRotate
 	} controls = controlScheme::PointToRotate;
+	std::shared_ptr<HUD> hud;
 public:
-	PlayerController(std::weak_ptr<Ship> inControlObject);
+	PlayerController(std::weak_ptr<Ship> inControlObject,
+		std::shared_ptr<HUD> inHud);
 	void toggleControlScheme();
 	void updateMovement() override{}
 	void updateControl() override;

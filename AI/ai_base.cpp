@@ -57,9 +57,11 @@ void BasicAI::updateLogic()
 /////-------------PlayerController-------------\\\\\
 
 PlayerController::PlayerController(
-	weak_ptr<Ship> inControlObject)
+	weak_ptr<Ship> inControlObject,
+	std::shared_ptr<HUD> inHud)
 :
-	AI(inControlObject)
+	AI(inControlObject),
+	hud(inHud)
 {
 	Mouse::subscribeToButtonPressed(
 		function<void(Button)>([this](Button button) -> void

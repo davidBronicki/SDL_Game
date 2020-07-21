@@ -1,5 +1,6 @@
 #include "Basic/MyGameObjects.h"
 #include "Basic/Player.h"
+#include "Basic/UI.h"
 
 using namespace std;
 
@@ -42,6 +43,7 @@ void Game::draw()
 
 	playSpace->draw();
 	player->draw();
+	hud->draw();
 
 	GameDrawEnvironment::render();
 }
