@@ -14,6 +14,7 @@ Game::Game()
 	hud(make_shared<HUD>())
 {
 	player = make_shared<Player>(hud);
+	cout << "Game Instantiated" << endl;
 }
 
 void Game::makeInstance()
@@ -24,9 +25,11 @@ void Game::makeInstance()
 
 void Game::initialize()
 {
+	cout << "Game Initialization has Started" << endl;
 	ControlMap::init();
 
 	playSpace = make_shared<PlaySpace>();
+	cout << "PlaySpace Instantiated" << endl;
 
 	shared_ptr<Ship> playerShip(make_shared<Ship>(
 		playSpace,
@@ -57,6 +60,7 @@ void Game::initialize()
 	player->newShip(playerShip);
 	playSpace->addEntity(playerShip);
 	playSpace->setCenter(playerShip);
+	cout << "Player Initialized" << endl;
 
 	shared_ptr<Ship> aiShip(make_shared<Ship>(
 		playSpace,
@@ -85,6 +89,9 @@ void Game::initialize()
 	playSpace->addEntity(aiShip);
 	aiShip->setShipController(
 		make_shared<BasicAI>(aiShip));
+	cout << "AI Initialized" << endl;
+
+	cout << "Playspace Initialized" << endl;
 
 	Keyboard::subscribeToKeyPressed(
 		function<void(Key)>([](Key key) -> void
@@ -99,10 +106,14 @@ void Game::initialize()
 	cam.setZoom(this, 0.02);
 	cam.release(this);
 	cam.take((I_CoreUpdate*)(player.get()));
+	cout << "Camera Initialized" << endl;
+
+	cout << "Initialization Now Exiting" << endl;
 }
 
 void Game::run()
 {
+	cout << "Entering Game Loop" << endl;
 	while (!GameControlEnvironment::userHasQuit())
 	{
 		GameControlEnvironment::sortQueue();

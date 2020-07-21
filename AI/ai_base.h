@@ -43,11 +43,12 @@ class PlayerController:
 		ButtonRotate
 	} controls = controlScheme::PointToRotate;
 	std::shared_ptr<HUD> hud;
+	std::shared_ptr<TargetElement> targetHudElement;
 public:
 	PlayerController(std::weak_ptr<Ship> inControlObject,
 		std::shared_ptr<HUD> inHud);
 	void toggleControlScheme();
 	void updateMovement() override{}
 	void updateControl() override;
-	void updateLogic() override{}
+	void updateLogic() override;
 };

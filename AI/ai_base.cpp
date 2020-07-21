@@ -61,8 +61,10 @@ PlayerController::PlayerController(
 	std::shared_ptr<HUD> inHud)
 :
 	AI(inControlObject),
-	hud(inHud)
+	hud(inHud),
+	targetHudElement(make_shared<TargetElement>())
 {
+	hud->addToDraw(targetHudElement);
 	Mouse::subscribeToButtonPressed(
 		function<void(Button)>([this](Button button) -> void
 		{
@@ -130,4 +132,36 @@ void PlayerController::updateControl()
 	{
 		controlObject.lock()->inertialBrake();
 	}
+}
+
+void PlayerController::updateLogic()
+{
+	std::shared_ptr<std::vector<SensorDatum>> workingData(
+		controlObject.lock()->pullSensors());
+
+	SensorDatum* targetLock;
+
+	if (workingData->size() != 0)
+	{
+		SensorDatum* minDistanceObject(
+			(*workingData).data());
+		float minDistSqr = 1e30f;
+		for (auto&& item : *workingData)
+		{
+			float distanceSqr = item.pos.magnitudeSqr();
+			if (distanceSqr < minDistSqr)
+			{
+				minDistanceObject = &item;
+				minDistSqr = distanceSqr;
+			}
+		}
+		targetLock = minDistanceObject;
+	}
+	else
+	{
+		targetLock = NULL;
+	}
+
+	targetHudElement->updatePosition(
+		make_shared<PhysicsObject>(Kinematic(targetLock->pos), 1, 1, 1));
 }
